@@ -71,7 +71,7 @@ class BackgroundManager {
     try {
       // Set default settings
       await chrome.storage.sync.set({
-        extensionVersion: '0.1.0',
+        extensionVersion: '0.1.1',
         installDate: Date.now(),
         firstRun: true
       });
@@ -91,12 +91,12 @@ class BackgroundManager {
    * Handle extension update
    */
   async handleUpdate(previousVersion) {
-    console.log(`Extension updated from ${previousVersion} to 0.1.0`);
+    console.log(`Extension updated from ${previousVersion} to 0.1.1`);
 
     try {
       // Update version in storage
       await chrome.storage.sync.set({
-        extensionVersion: '0.1.0',
+        extensionVersion: '0.1.1',
         lastUpdateDate: Date.now(),
         previousVersion: previousVersion
       });

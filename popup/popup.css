@@ -48,9 +48,17 @@ body {
 }
 
 .logo-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-svg {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
 }
 
 .logo h1 {

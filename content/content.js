@@ -16,6 +16,7 @@ class SpotifyLabelExplorer {
     this.scatalogMenu = null; // Scatalog management menu
     this.currentArtistDrawer = null; // Track current artist drawer
     this.artistDrawerVisible = true; // Track drawer visibility state
+    this.artistOffset = 0; // Track current offset for pagination
     
     this.init();
   }
@@ -29,25 +30,18 @@ class SpotifyLabelExplorer {
     }
 
     try {
-      const iconUrl = chrome.runtime.getURL('icons/info_icon.svg');
-      const response = await fetch(iconUrl);
-      const svgText = await response.text();
+      // Use the new provided SVG path directly
+      this.iconSvg = `
+        <path d="M971 986c-42 0-76-34-76-76V114a76 76 0 01152 0v796c0 42-34 76-76 76zM770 986c-42 0-76-34-76-76V114a76 76 0 01152 0v796c0 42-34 76-76 76zM569 986c-42 0-76-34-76-76V114a76 76 0 01152 0v796c0 42-34 76-76 76zM99 963c-8 0-17-2-25-5a76 76 0 01-46-97l268-749a76 76 0 11143 51L171 912a76 76 0 01-72 51z"></path>
+      `;
       
-      // Extract the inner content of the SVG (everything between <svg> tags)
-      const svgMatch = svgText.match(/<svg[^>]*>(.*?)<\/svg>/s);
-      if (svgMatch) {
-        this.iconSvg = svgMatch[1]; // Cache the inner SVG content
-        console.log('scatalog: SVG icon loaded successfully');
-        return this.iconSvg;
-      } else {
-        throw new Error('Invalid SVG format');
-      }
+      console.log('scatalog: New SVG icon loaded successfully');
+      return this.iconSvg;
     } catch (error) {
       console.error('Failed to load SVG icon:', error);
-      // Fallback to a simple icon
+      // Fallback to the new SVG as well
       this.iconSvg = `
-        <circle cx="1500" cy="1500" r="1200" fill="rgb(30,215,96)"/>
-        <text x="1500" y="1800" text-anchor="middle" fill="white" font-size="1000" font-family="Arial">L</text>
+        <path d="M971 986c-42 0-76-34-76-76V114a76 76 0 01152 0v796c0 42-34 76-76 76zM770 986c-42 0-76-34-76-76V114a76 76 0 01152 0v796c0 42-34 76-76 76zM569 986c-42 0-76-34-76-76V114a76 76 0 01152 0v796c0 42-34 76-76 76zM99 963c-8 0-17-2-25-5a76 76 0 01-46-97l268-749a76 76 0 11143 51L171 912a76 76 0 01-72 51z"></path>
       `;
       return this.iconSvg;
     }
@@ -231,28 +225,34 @@ class SpotifyLabelExplorer {
       await this.loadSvgIcon();
     }
 
-    // Create the label info button immediately (no API calls during creation)
-    const labelButton = document.createElement('button');
-    labelButton.className = 'spotify-label-explorer-btn';
-    labelButton.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 3000 3000" xmlns="http://www.w3.org/2000/svg" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
-        ${this.iconSvg || '<circle cx="1500" cy="1500" r="1200" fill="rgb(30,215,96)"/><text x="1500" y="1800" text-anchor="middle" fill="white" font-size="1000" font-family="Arial">L</text>'}
-      </svg>
-    `;
+    // Create the label info button with better styling
+    const button = document.createElement('button');
+    button.className = 'spotify-label-explorer-btn';
+    button.setAttribute('aria-label', 'Explore record label catalog');
+    button.setAttribute('title', 'Explore record label catalog');
+    
+    // Create SVG with viewBox for the new icon
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 1024 1024');
+    svg.setAttribute('width', '16');
+    svg.setAttribute('height', '16');
+    svg.innerHTML = await this.loadSvgIcon();
+    
+    button.appendChild(svg);
     
     // Generic title - we'll update it after API call if needed
-    labelButton.title = 'Explore label catalog';
+    button.title = 'Explore label catalog';
     
     // Store the label info in the button for later use
-    labelButton.labelInfo = labelInfo;
+    button.labelInfo = labelInfo;
     
-    labelButton.addEventListener('click', async (e) => {
+    button.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       
       // Show loading state
-      labelButton.disabled = true;
-      labelButton.innerHTML = `
+      button.disabled = true;
+      button.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z">
             <animateTransform attributeName="transform" type="rotate" dur="1s" values="0 12 12;360 12 12" repeatCount="indefinite"/>
@@ -265,62 +265,62 @@ class SpotifyLabelExplorer {
     let finalLabelInfo = labelInfo;
     if (labelInfo.needsApiLookup) {
       finalLabelInfo = await this.getLabelFromSpotifyData(labelInfo);
-      if (!finalLabelInfo || !finalLabelInfo.label) {
+              if (!finalLabelInfo || !finalLabelInfo.label) {
             // Show error state
-            labelButton.innerHTML = `
+            button.innerHTML = `
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12,2C17.53,2 22,6.47 22,12C22,17.53 17.53,22 12,22C6.47,22 2,17.53 2,12C2,6.47 6.47,2 12,2M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7Z"/>
               </svg>
             `;
-            labelButton.title = 'No label information found';
+            button.title = 'No label information found';
             setTimeout(() => {
               // Restore original icon after 2 seconds
-              labelButton.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 3000 3000" xmlns="http://www.w3.org/2000/svg" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
-                  ${this.iconSvg || '<circle cx="1500" cy="1500" r="1200" fill="rgb(30,215,96)"/><text x="1500" y="1800" text-anchor="middle" fill="white" font-size="1000" font-family="Arial">L</text>'}
+              button.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor">
+                  ${this.iconSvg}
                 </svg>
               `;
-              labelButton.title = 'Explore label catalog';
-              labelButton.disabled = false;
+              button.title = 'Explore label catalog';
+              button.disabled = false;
             }, 2000);
         return;
       }
     }
 
         // Restore original icon and show modal
-    labelButton.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 3000 3000" xmlns="http://www.w3.org/2000/svg" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
-            ${this.iconSvg || '<circle cx="1500" cy="1500" r="1200" fill="rgb(30,215,96)"/><text x="1500" y="1800" text-anchor="middle" fill="white" font-size="1000" font-family="Arial">L</text>'}
+    button.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor">
+            ${this.iconSvg}
       </svg>
     `;
-    labelButton.title = `Explore ${finalLabelInfo.label} catalog`;
-        labelButton.disabled = false;
+    button.title = `Explore ${finalLabelInfo.label} catalog`;
+        button.disabled = false;
         
       this.showLabelModal(finalLabelInfo);
       } catch (error) {
         console.error('Failed to get label info:', error);
         // Show error state
-        labelButton.innerHTML = `
+        button.innerHTML = `
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12,2C17.53,2 22,6.47 22,12C22,17.53 17.53,22 12,22C6.47,22 2,17.53 2,12C2,6.47 6.47,2 12,2M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7Z"/>
           </svg>
         `;
-        labelButton.title = 'Failed to load label information';
+        button.title = 'Failed to load label information';
         setTimeout(() => {
           // Restore original icon after 2 seconds
-          labelButton.innerHTML = `
-            <svg width="16" height="16" viewBox="0 0 3000 3000" xmlns="http://www.w3.org/2000/svg" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
-              ${this.iconSvg || '<circle cx="1500" cy="1500" r="1200" fill="rgb(30,215,96)"/><text x="1500" y="1800" text-anchor="middle" fill="white" font-size="1000" font-family="Arial">L</text>'}
+          button.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor">
+              ${this.iconSvg}
             </svg>
           `;
-          labelButton.title = 'Explore label catalog';
-          labelButton.disabled = false;
+          button.title = 'Explore label catalog';
+          button.disabled = false;
         }, 2000);
       }
     });
 
     // Insert the button next to the more button
-    parent.insertBefore(labelButton, moreButton.nextSibling);
+    parent.insertBefore(button, moreButton.nextSibling);
     
     // Mark this more button as processed
     moreButton.setAttribute('data-label-explorer-processed', 'true');
@@ -568,10 +568,15 @@ class SpotifyLabelExplorer {
     this.originalAlbums = [];
     this.currentAlbums = [];
 
-    // Create modal overlay
+    // Create modal overlay with three-panel flexbox layout
     const overlay = document.createElement('div');
     overlay.className = 'spotify-label-explorer-overlay';
     
+    // Create layout container for three-panel layout
+    const layoutContainer = document.createElement('div');
+    layoutContainer.className = 'scatalog-layout-container';
+    
+    // Create main modal (center panel)
     const modal = document.createElement('div');
     modal.className = 'spotify-label-explorer-modal';
     
@@ -594,7 +599,10 @@ class SpotifyLabelExplorer {
     
     modal.appendChild(header);
     modal.appendChild(content);
-    overlay.appendChild(modal);
+    
+    // Add modal to layout container and overlay to body
+    layoutContainer.appendChild(modal);
+    overlay.appendChild(layoutContainer);
     document.body.appendChild(overlay);
     
     this.currentModal = overlay;
@@ -668,7 +676,7 @@ class SpotifyLabelExplorer {
                 <span class="artist-releases">${label.albums.length} release${label.albums.length !== 1 ? 's' : ''} by ${artistName}</span>
               </p>
               <p class="label-total-count" data-label-name="${label.name}">
-                <span class="total-text">hover for total</span>
+                <span class="total-text">loading...</span>
               </p>
               <div class="label-albums-preview">
                 ${label.albums.slice(0, 3).map(album => `
@@ -699,8 +707,8 @@ class SpotifyLabelExplorer {
     
     container.innerHTML = resultsHTML;
     
-    // Set up hover functionality for total label counts
-    this.setupLabelTotalCountHover(container);
+    // Set up total label counts loading
+    this.setupLabelTotalCounts(container);
     
     // Set up add button event listeners
     container.querySelectorAll('.add-label-btn').forEach(btn => {
@@ -797,135 +805,58 @@ class SpotifyLabelExplorer {
   }
 
   /**
-   * Setup hover functionality for label total counts
+   * Load and display total label counts immediately
    */
-  setupLabelTotalCountHover(container) {
+  setupLabelTotalCounts(container) {
     const labelItems = container.querySelectorAll('.other-label-item');
     const loadedCounts = new Map(); // Cache to avoid duplicate API calls
     const pendingRequests = new Set(); // Track pending requests to avoid duplicates
     
-    // Prefetch counts for the first few visible labels
-    this.prefetchPopularLabelCounts(labelItems, loadedCounts, pendingRequests);
-    
-    labelItems.forEach(item => {
+    // Load counts for all labels immediately
+    this.loadAllLabelCounts(labelItems, loadedCounts, pendingRequests);
+  }
+
+  /**
+   * Load label counts for all labels and display them immediately
+   */
+  async loadAllLabelCounts(labelItems, loadedCounts, pendingRequests) {
+    for (const item of labelItems) {
       const labelName = item.dataset.labelName;
       const totalCountElement = item.querySelector('.label-total-count');
       const totalTextElement = item.querySelector('.total-text');
       
-      if (!totalCountElement || !totalTextElement) return;
-      
-      let hoverTimeout = null;
-      let isHovering = false;
-      
-      const handleMouseEnter = () => {
-        isHovering = true;
-        
-        // Clear any existing timeout
-        if (hoverTimeout) {
-          clearTimeout(hoverTimeout);
-        }
-        
-        // If already loaded, show immediately
-        if (loadedCounts.has(labelName)) {
-          const count = loadedCounts.get(labelName);
-                      totalTextElement.innerHTML = count !== null ? `<strong>${count}</strong> total releases` : 'unknown total';
-          // Apply consistent styling for prefetched items
-          if (count !== null) {
-            totalCountElement.classList.add('loaded');
-          } else {
-            totalCountElement.classList.add('error');
-          }
-          return;
-        }
-        
-        // If request is already pending, don't show loading state
-        if (pendingRequests.has(labelName)) {
-          return;
-        }
-        
-        // Delay the API call to avoid calls on quick mouse movements
-        hoverTimeout = setTimeout(async () => {
-          // Double-check we're still hovering and don't have the data
-          if (!isHovering || loadedCounts.has(labelName) || pendingRequests.has(labelName)) {
-            return;
-          }
-          
-          // Just mark as pending, no visual loading state
-          pendingRequests.add(labelName);
-          
-          try {
-            const totalCount = await this.getLabelTotalReleaseCount(labelName);
-            loadedCounts.set(labelName, totalCount);
-            
-            // Only update if still hovering
-            if (isHovering) {
-              if (totalCount !== null && totalCount !== 0) {
-                const displayCount = typeof totalCount === 'string' ? totalCount : totalCount.toString();
-                totalTextElement.innerHTML = `<strong>${displayCount}</strong> total releases`;
-                totalCountElement.classList.add('loaded');
-              } else {
-                totalTextElement.textContent = 'unknown total';
-                totalCountElement.classList.add('error');
-              }
-            }
-          } catch (error) {
-            console.error('Failed to load total count for label:', labelName, error);
-            loadedCounts.set(labelName, null); // Cache the error
-            
-            if (isHovering) {
-              totalTextElement.textContent = 'error loading';
-              totalCountElement.classList.add('error');
-            }
-          } finally {
-            pendingRequests.delete(labelName);
-          }
-        }, 300); // Reduced delay from 500ms to 300ms for better responsiveness
-      };
-      
-      const handleMouseLeave = () => {
-        isHovering = false;
-        
-        if (hoverTimeout) {
-          clearTimeout(hoverTimeout);
-          hoverTimeout = null;
-        }
-        
-        // Reset to original state if not loaded yet and no pending request
-        if (!loadedCounts.has(labelName) && !pendingRequests.has(labelName)) {
-          totalTextElement.textContent = 'hover for total';
-        }
-      };
-      
-      item.addEventListener('mouseenter', handleMouseEnter);
-      item.addEventListener('mouseleave', handleMouseLeave);
-    });
-  }
-
-  /**
-   * Prefetch label counts for better perceived performance
-   */
-  async prefetchPopularLabelCounts(labelItems, loadedCounts, pendingRequests) {
-    // Prefetch the first 8 labels that are likely to be hovered
-    const itemsToPreload = Array.from(labelItems).slice(0, 8);
-    
-    for (const item of itemsToPreload) {
-      const labelName = item.dataset.labelName;
+      if (!totalCountElement || !totalTextElement) continue;
       
       if (!loadedCounts.has(labelName) && !pendingRequests.has(labelName)) {
         pendingRequests.add(labelName);
         
+        // Show loading state
+        totalTextElement.textContent = 'loading...';
+        
         try {
           const totalCount = await this.getLabelTotalReleaseCount(labelName);
           loadedCounts.set(labelName, totalCount);
+          
+          // Update the display
+          if (totalCount !== null && totalCount !== 0) {
+            const displayCount = typeof totalCount === 'string' ? totalCount : totalCount.toString();
+            totalTextElement.innerHTML = `<strong>${displayCount}</strong> total releases`;
+            totalCountElement.classList.add('loaded');
+          } else {
+            totalTextElement.textContent = 'unknown total';
+            totalCountElement.classList.add('error');
+          }
         } catch (error) {
-          console.warn('Failed to prefetch count for label:', labelName, error);
+          console.warn('Failed to load count for label:', labelName, error);
           loadedCounts.set(labelName, null);
+          totalTextElement.textContent = 'error loading';
+          totalCountElement.classList.add('error');
         } finally {
           pendingRequests.delete(labelName);
         }
         
-        // Small delay between prefetch requests
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Small delay between requests to avoid overwhelming the API
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
     }
   }
@@ -1386,10 +1317,15 @@ class SpotifyLabelExplorer {
       this.closeModal();
     }
 
-    // Create modal overlay
+    // Create modal overlay with three-panel flexbox layout
     const overlay = document.createElement('div');
     overlay.className = 'spotify-label-explorer-overlay';
     
+    // Create layout container for three-panel layout
+    const layoutContainer = document.createElement('div');
+    layoutContainer.className = 'scatalog-layout-container';
+    
+    // Create main modal (center panel)
     const modal = document.createElement('div');
     modal.className = 'spotify-label-explorer-modal';
     
@@ -1412,7 +1348,10 @@ class SpotifyLabelExplorer {
     
     modal.appendChild(header);
     modal.appendChild(content);
-    overlay.appendChild(modal);
+    
+    // Add modal to layout container and overlay to body
+    layoutContainer.appendChild(modal);
+    overlay.appendChild(layoutContainer);
     document.body.appendChild(overlay);
     
     this.currentModal = overlay;
@@ -1455,7 +1394,15 @@ class SpotifyLabelExplorer {
     // Set up state variables needed for related artists and labels functionality
     this.currentLabels = [...scatalog.labels];
     this.originalAlbums = [...scatalog.albums];
-    this.currentAlbums = [...scatalog.albums];
+    
+    // Sort albums by release date descending to match UI default (if not already sorted)
+    this.originalAlbums.sort((a, b) => {
+      const dateA = new Date(a.release_date);
+      const dateB = new Date(b.release_date);
+      return dateB - dateA; // Descending order (newest first)
+    });
+    
+    this.currentAlbums = [...this.originalAlbums];
 
     // Create the artist drawer for saved scatalogs (always create it since we have the data)
     setTimeout(() => {
@@ -1502,16 +1449,23 @@ class SpotifyLabelExplorer {
             </div>
           </div>
           <div class="results-header-actions">
+            <div class="header-add-label-container">
+              <input type="text" id="add-label-input" class="header-add-label-input" placeholder="Add label..." />
+              <button class="header-add-label-btn" id="addLabelSubmitBtn" title="Add label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                </svg>
+              </button>
+            </div>
             <button class="related-artists-btn" id="relatedArtistsBtn" title="Toggle Related Artists panel">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
               </svg>
             </button>
             <button class="save-scatalog-btn" id="saveScatalogBtn" title="Save current catalog as Scatalog">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
               </svg>
-              scatalog
             </button>
           </div>
         </div>
@@ -2043,16 +1997,23 @@ class SpotifyLabelExplorer {
             </div>
           </div>
           <div class="results-header-actions">
+            <div class="header-add-label-container">
+              <input type="text" id="add-label-input" class="header-add-label-input" placeholder="Add label..." />
+              <button class="header-add-label-btn" id="addLabelSubmitBtn" title="Add label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                </svg>
+              </button>
+            </div>
             <button class="related-artists-btn" id="relatedArtistsBtn" title="Toggle Related Artists panel">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
               </svg>
             </button>
             <button class="save-scatalog-btn" id="saveScatalogBtn" title="Save current catalog as Scatalog">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
               </svg>
-              scatalog
             </button>
           </div>
         </div>
@@ -2089,6 +2050,35 @@ class SpotifyLabelExplorer {
           e.stopPropagation();
           this.toggleRelatedArtistsDrawer(relatedArtistsBtn);
         });
+      }
+
+      // Re-setup Add Label input functionality
+      const addLabelInput = newHeader.querySelector('#add-label-input');
+      const addLabelSubmitBtn = newHeader.querySelector('#addLabelSubmitBtn');
+      
+      if (addLabelInput && addLabelSubmitBtn) {
+        // Handle input changes
+        addLabelInput.addEventListener('input', () => {
+          const labelName = addLabelInput.value.trim();
+          addLabelSubmitBtn.disabled = labelName.length === 0;
+        });
+        
+        // Handle Enter key
+        addLabelInput.addEventListener('keypress', async (e) => {
+          if (e.key === 'Enter' && !addLabelSubmitBtn.disabled) {
+            await this.handleAddLabelByName(addLabelInput, addLabelSubmitBtn);
+          }
+        });
+        
+        // Handle button click
+        addLabelSubmitBtn.addEventListener('click', async () => {
+          if (!addLabelSubmitBtn.disabled) {
+            await this.handleAddLabelByName(addLabelInput, addLabelSubmitBtn);
+          }
+        });
+        
+        // Initial button state
+        addLabelSubmitBtn.disabled = true;
       }
       
       // Recreate artist drawer to reflect the current labels
@@ -2229,8 +2219,16 @@ class SpotifyLabelExplorer {
       }
       this.labelTotalCounts.set(labelName, results.albums?.total || newAlbums.length);
       
-      // Append new albums
+      // Append new albums and sort by release date descending to maintain consistency
       this.originalAlbums = [...this.originalAlbums, ...albumsWithLabel];
+      
+      // Re-sort all albums by release date descending (newest first)
+      this.originalAlbums.sort((a, b) => {
+        const dateA = new Date(a.release_date);
+        const dateB = new Date(b.release_date);
+        return dateB - dateA; // Descending order (newest first)
+      });
+      
       this.currentAlbums = [...this.originalAlbums];
       // Append new label
       if (!this.currentLabels.includes(labelName)) {
@@ -2293,6 +2291,14 @@ class SpotifyLabelExplorer {
       ...album,
       labelName: labelName
     }));
+    
+    // Sort albums by release date descending (newest first) to match UI default
+    this.originalAlbums.sort((a, b) => {
+      const dateA = new Date(a.release_date);
+      const dateB = new Date(b.release_date);
+      return dateB - dateA; // Descending order (newest first)
+    });
+    
     this.currentAlbums = [...this.originalAlbums];
     this.currentLabelName = labelName;
     this.currentLabels = [labelName];
@@ -2476,16 +2482,23 @@ class SpotifyLabelExplorer {
             </div>
           </div>
           <div class="results-header-actions">
+            <div class="header-add-label-container">
+              <input type="text" id="add-label-input" class="header-add-label-input" placeholder="Add label..." />
+              <button class="header-add-label-btn" id="addLabelSubmitBtn" title="Add label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                </svg>
+              </button>
+            </div>
             <button class="related-artists-btn" id="relatedArtistsBtn" title="Toggle Related Artists panel">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
               </svg>
             </button>
             <button class="save-scatalog-btn" id="saveScatalogBtn" title="Save current catalog as Scatalog">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
               </svg>
-              scatalog
             </button>
           </div>
         </div>
@@ -2698,9 +2711,117 @@ class SpotifyLabelExplorer {
       this.saveOpenInNewTabPreference(this.openInNewTab);
     });
     
+    // Add label input functionality
+    const addLabelInput = container.querySelector('#add-label-input');
+    const addLabelSubmitBtn = container.querySelector('#addLabelSubmitBtn');
+    
+    if (addLabelInput && addLabelSubmitBtn) {
+      // Handle input changes
+      addLabelInput.addEventListener('input', () => {
+        const labelName = addLabelInput.value.trim();
+        addLabelSubmitBtn.disabled = labelName.length === 0;
+      });
+      
+      // Handle Enter key
+      addLabelInput.addEventListener('keypress', async (e) => {
+        if (e.key === 'Enter' && !addLabelSubmitBtn.disabled) {
+          await this.handleAddLabelByName(addLabelInput, addLabelSubmitBtn);
+        }
+      });
+      
+      // Handle button click
+      addLabelSubmitBtn.addEventListener('click', async () => {
+        if (!addLabelSubmitBtn.disabled) {
+          await this.handleAddLabelByName(addLabelInput, addLabelSubmitBtn);
+        }
+      });
+      
+      // Initial state
+      addLabelSubmitBtn.disabled = true;
+    }
+
     // Initial setup
     applySorting();
     this.setupAlbumClickHandlers(resultsGrid);
+  }
+
+  /**
+   * Handle adding a label by name from the input field
+   */
+  async handleAddLabelByName(inputElement, buttonElement) {
+    const labelName = inputElement.value.trim();
+    
+    if (!labelName) {
+      return;
+    }
+    
+    // Check if label is already active
+    if (this.currentLabels.includes(labelName)) {
+      // Show brief feedback
+      inputElement.style.borderColor = '#ffa500';
+      inputElement.placeholder = 'Label already active';
+      inputElement.value = '';
+      buttonElement.disabled = true;
+      
+             setTimeout(() => {
+         inputElement.style.borderColor = '';
+         inputElement.placeholder = 'Add label by name...';
+         // Re-enable button state management  
+         const currentValue = inputElement.value.trim();
+         buttonElement.disabled = currentValue.length === 0;
+       }, 2000);
+      return;
+    }
+    
+    // Show loading state
+    const originalButtonContent = buttonElement.innerHTML;
+    buttonElement.innerHTML = '<div class="loading-spinner" style="width: 14px; height: 14px;"></div>';
+    buttonElement.disabled = true;
+    inputElement.disabled = true;
+    
+    try {
+      // Try to add the label
+      await this.addLabelToCurrentResults(labelName);
+      
+      // Success feedback
+      inputElement.value = '';
+      inputElement.placeholder = 'Label added successfully!';
+      inputElement.style.borderColor = '#1db954';
+      buttonElement.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.76L18.88,4.88L21.71,7.71L9,20.42Z"/>
+        </svg>
+      `;
+      
+             setTimeout(() => {
+         inputElement.style.borderColor = '';
+         inputElement.placeholder = 'Add label by name...';
+         buttonElement.innerHTML = originalButtonContent;
+         inputElement.disabled = false;
+         // Don't disable button, let the input event handler manage button state
+         const currentValue = inputElement.value.trim();
+         buttonElement.disabled = currentValue.length === 0;
+       }, 2000);
+      
+    } catch (error) {
+      console.error('Failed to add label:', error);
+      
+      // Error feedback
+      inputElement.style.borderColor = '#e22134';
+      inputElement.placeholder = 'Label not found or error occurred';
+      inputElement.value = '';
+      buttonElement.innerHTML = originalButtonContent;
+      buttonElement.disabled = true;
+      inputElement.disabled = false;
+      
+             setTimeout(() => {
+         inputElement.style.borderColor = '';
+         inputElement.placeholder = 'Add label by name...';
+         // Re-enable button state management
+         const currentValue = inputElement.value.trim();
+         buttonElement.disabled = currentValue.length === 0;
+       }, 3000);
+    }
   }
 
   /**
@@ -2960,12 +3081,29 @@ class SpotifyLabelExplorer {
    * Open artist page on Spotify, respecting the "open in new tab" preference
    */
   async openArtistPage(artistId) {
+    // Prevent multiple rapid calls for the same artist
+    const now = Date.now();
+    const key = `openArtist_${artistId}`;
+    
+    if (this.lastOpenArtistTime && this.lastOpenArtistTime[key] && (now - this.lastOpenArtistTime[key]) < 2000) {
+      console.log('Preventing duplicate artist page opening for', artistId);
+      return;
+    }
+    
+    // Initialize tracking object if needed
+    if (!this.lastOpenArtistTime) {
+      this.lastOpenArtistTime = {};
+    }
+    this.lastOpenArtistTime[key] = now;
+    
     try {
       // Get the cached "open in new tab" preference
       const openInNewTab = await this.getOpenInNewTabPreference();
       
       // Construct Spotify artist URL
       const artistUrl = `https://open.spotify.com/artist/${artistId}`;
+      
+      console.log(`Opening artist page for ${artistId}: ${artistUrl}`);
       
       if (openInNewTab) {
         window.open(artistUrl, '_blank');
@@ -3145,15 +3283,25 @@ class SpotifyLabelExplorer {
         <button class="labels-drawer-close">×</button>
       </div>
       <div class="labels-drawer-body">
-        <div class="loading">Loading artist labels...</div>
+        <div class="loading-labels">
+          <div class="loading-text">Loading labels</div>
+          <div class="loading-spinner"></div>
+        </div>
       </div>
     `;
 
     drawer.appendChild(toggleButton);
     drawer.appendChild(drawerContent);
 
-    // Add to DOM
-    document.body.appendChild(drawer);
+    // Add drawer to the layout container
+    const layoutContainer = document.querySelector('.scatalog-layout-container');
+    if (layoutContainer) {
+      layoutContainer.appendChild(drawer);
+      console.log('Labels drawer added to layout container');
+    } else {
+      console.log('Layout container not found, falling back to document.body');
+      document.body.appendChild(drawer);
+    }
 
     // Setup drawer functionality
     this.setupLabelsDrawer(drawer, toggleButton, drawerContent, artistId, artistName);
@@ -3165,52 +3313,25 @@ class SpotifyLabelExplorer {
    * Setup labels drawer functionality
    */
   setupLabelsDrawer(drawer, toggleButton, drawerContent, artistId, artistName) {
-    let isOpen = false;
-    
-    // Toggle drawer open/close
-    const toggleDrawer = () => {
-      isOpen = !isOpen;
-      drawer.classList.toggle('open', isOpen);
-      
-      // Clear active state when closing
-      if (!isOpen) {
-        this.clearActiveArtistButton();
-      }
-      
-      // Update toggle button icon
-      const icon = toggleButton.querySelector('svg path');
-      if (isOpen) {
-        icon.setAttribute('d', 'M10,17L15,12L10,7V17Z'); // Right arrow
-      } else {
-        icon.setAttribute('d', 'M15,17L10,12L15,7V17Z'); // Left arrow
-      }
-    };
-    
-    // Toggle button click
-    toggleButton.addEventListener('click', toggleDrawer);
+    // Always visible in flexbox layout - no toggle functionality needed
     
     // Close drawer button
     const closeButton = drawerContent.querySelector('.labels-drawer-close');
-    closeButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      isOpen = false;
-      drawer.classList.remove('open');
-      this.clearActiveArtistButton();
-      
-      // Update toggle button icon
-      const icon = toggleButton.querySelector('svg path');
-      icon.setAttribute('d', 'M15,17L10,12L15,7V17Z'); // Left arrow
-    });
+    if (closeButton) {
+      closeButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Remove the drawer from DOM
+        drawer.remove();
+        this.clearActiveArtistButton();
+      });
+    }
     
     // Load and display the labels
     this.loadLabelsDrawerContent(drawerContent, artistId, artistName);
     
-    // Position the drawer next to the main modal
-    this.positionLabelsDrawer(drawer);
-    
-    // Update position when window resizes
-    window.addEventListener('resize', () => this.positionLabelsDrawer(drawer));
+    // No positioning needed in flexbox layout
     
     // Remove drawer when main modal is closed
     const observer = new MutationObserver(() => {
@@ -3262,8 +3383,7 @@ class SpotifyLabelExplorer {
     drawer.style.top = `${modalRect.top}px`;
     drawer.style.maxHeight = `${modalRect.height}px`;
     
-    // Make drawer visible by default
-    drawer.classList.add('open');
+    // Drawer visibility is now handled by setupLabelsDrawer
   }
 
   /**
@@ -3332,12 +3452,13 @@ class SpotifyLabelExplorer {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
                 </svg>
+                <span class="add-overlay-text">Add to search</span>
               </div>
             </div>
             <div class="label-info">
               <h3 class="label-name">${label.name}</h3>
               <p class="label-total-count" data-label-name="${label.name}">
-                <span class="total-text">hover for total</span>
+                <span class="total-text">loading...</span>
               </p>
               <p class="label-details">
                 <span class="artist-releases">${label.albums.length} release${label.albums.length !== 1 ? 's' : ''} by ${artistName}</span>
@@ -3361,8 +3482,8 @@ class SpotifyLabelExplorer {
     
     container.innerHTML = resultsHTML;
     
-    // Set up hover functionality for total label counts
-    this.setupLabelTotalCountHover(container);
+    // Set up total label counts loading
+    this.setupLabelTotalCounts(container);
     
     // Set up clickable label card event listeners
     container.querySelectorAll('.clickable-label-card').forEach(card => {
@@ -3539,21 +3660,38 @@ class SpotifyLabelExplorer {
             </div>
           `).join('')}
         </div>
+        <div class="show-more-artists-container">
+          <button class="show-more-artists-btn" title="Load 10 more artists using smart recommendation algorithm">
+            <span class="show-more-text">Show more artists</span>
+            <span class="show-more-loading" style="display: none;">
+              <div class="loading-spinner"></div>
+            </span>
+          </button>
+        </div>
       </div>
     `;
     
     drawer.appendChild(toggleButton);
     drawer.appendChild(drawerContent);
     
-    // Add drawer to the document body
-    document.body.appendChild(drawer);
-    console.log('Artist drawer added to DOM');
+    // Add drawer to the layout container
+    const layoutContainer = document.querySelector('.scatalog-layout-container');
+    if (layoutContainer) {
+      layoutContainer.appendChild(drawer);
+      console.log('Artist drawer added to layout container');
+    } else {
+      console.log('Layout container not found, falling back to document.body');
+      document.body.appendChild(drawer);
+    }
     
     // Store drawer reference for toggle functionality
     this.currentArtistDrawer = drawer;
     
-    // Setup drawer functionality
-    this.setupArtistDrawer(drawer, toggleButton, drawerContent, scatalog);
+    // Reset pagination offset for new drawer
+    this.artistOffset = artistButtons.length;
+    
+    // Setup drawer functionality - pass the generated artistButtons
+    this.setupArtistDrawer(drawer, toggleButton, drawerContent, scatalog, artistButtons);
     
     // Set initial button state (drawer is open by default)
     this.artistDrawerVisible = true;
@@ -3565,67 +3703,61 @@ class SpotifyLabelExplorer {
   /**
    * Setup artist drawer functionality
    */
-  setupArtistDrawer(drawer, toggleButton, drawerContent, scatalog) {
-    let isOpen = false;
+  setupArtistDrawer(drawer, toggleButton, drawerContent, scatalog, artistButtons = null) {
     
-    // Get artist buttons from scatalog or generate them
-    let artistButtons = scatalog.artistButtons;
-    if (!artistButtons || artistButtons.length === 0) {
-      // This should have been handled in createArtistDrawer, but add fallback
-      console.log('No artist buttons in setupArtistDrawer, creating fallback');
-      artistButtons = [];
+    // Use provided artistButtons or get from scatalog
+    if (!artistButtons) {
+      artistButtons = scatalog.artistButtons;
+      if (!artistButtons || artistButtons.length === 0) {
+        console.log('No artist buttons available in setupArtistDrawer');
+        artistButtons = [];
+      }
     }
     
-    // Toggle drawer open/close
-    const toggleDrawer = () => {
-      isOpen = !isOpen;
-      drawer.classList.toggle('open', isOpen);
-      
-      // Update toggle button icon
-      const icon = toggleButton.querySelector('svg path');
-      if (isOpen) {
-        icon.setAttribute('d', 'M15,17L10,12L15,7V17Z'); // Left arrow
-      } else {
-        icon.setAttribute('d', 'M10,17L15,12L10,7V17Z'); // Right arrow
-      }
-    };
+    // Always visible in flexbox layout - no toggle functionality needed
     
-    // Toggle button click
-    toggleButton.addEventListener('click', toggleDrawer);
+    // No toggle functionality needed in flexbox layout
     
     // Close drawer button
     const closeButton = drawerContent.querySelector('.artist-drawer-close');
-    closeButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      // Always close the drawer, don't toggle
-      isOpen = false;
-      drawer.classList.remove('open');
-      
-      // Update toggle button icon
-      const icon = toggleButton.querySelector('svg path');
-      icon.setAttribute('d', 'M10,17L15,12L10,7V17Z'); // Right arrow
-      
-      // Update related artists button state
-      this.artistDrawerVisible = false;
-      this.updateRelatedArtistsButton();
-    });
+    if (closeButton) {
+      closeButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Remove the drawer from DOM
+        drawer.remove();
+        
+        // Clear the drawer reference
+        this.currentArtistDrawer = null;
+        
+        // Update related artists button state
+        this.artistDrawerVisible = false;
+        this.updateRelatedArtistsButton();
+      });
+    }
     
     // Setup event listeners for artist drawer content
     this.setupArtistDrawerEventListeners(drawerContent);
+    
+    // Setup "Show more artists" button
+    const showMoreButton = drawerContent.querySelector('.show-more-artists-btn');
+    if (showMoreButton) {
+      showMoreButton.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await this.loadMoreArtists(drawerContent);
+      });
+    }
 
     // Label counts are now included in the smart recommendation data
     
     // Load artist thumbnails
     console.log('Loading artist thumbnails for', artistButtons.length, 'artists');
+    console.log('Artist data structure:', artistButtons.slice(0, 2)); // Debug: show first 2 artists
     this.loadArtistThumbnails(drawerContent, artistButtons);
     
-    // Position the drawer next to the main modal
-    console.log('Calling positionArtistDrawer');
-    this.positionArtistDrawer(drawer);
-    
-    // Update position when window resizes
-    window.addEventListener('resize', () => this.positionArtistDrawer(drawer));
+    // No positioning needed in flexbox layout
     
     // Remove drawer when main modal is closed
     const observer = new MutationObserver(() => {
@@ -3670,8 +3802,7 @@ class SpotifyLabelExplorer {
       console.log('Positioning drawer to the left of modal');
     }
     
-    // Make drawer visible by default
-    drawer.classList.add('open');
+    // Drawer visibility is now handled by setupArtistDrawer
   }
 
   /**
@@ -3687,12 +3818,19 @@ class SpotifyLabelExplorer {
       // Process batch in parallel
       const promises = batch.map(async (artist) => {
         try {
+          console.log(`Loading thumbnail for artist: ${artist.name} (ID: ${artist.id})`);
           const artistDetails = await this.api.getArtist(artist.id);
           const thumbnail = drawerContent.querySelector(`[data-artist-id="${artist.id}"]`);
           
-          if (thumbnail && artistDetails.images && artistDetails.images.length > 0) {
+          if (!thumbnail) {
+            console.warn(`Thumbnail element not found for artist ${artist.name} (ID: ${artist.id})`);
+            return;
+          }
+          
+          if (artistDetails && artistDetails.images && artistDetails.images.length > 0) {
             // Use the smallest image (usually the last one)
             const image = artistDetails.images[artistDetails.images.length - 1];
+            console.log(`Found ${artistDetails.images.length} images for ${artist.name}, using: ${image.url}`);
             
             thumbnail.innerHTML = `
               <img src="${image.url}" 
@@ -3700,12 +3838,12 @@ class SpotifyLabelExplorer {
                    class="artist-thumbnail"
                    onerror="this.parentElement.innerHTML='<div class=\\'artist-thumbnail-fallback\\'>♪</div>'" />
             `;
-          } else if (thumbnail) {
-            // Fallback for artists without images
+          } else {
+            console.log(`No images found for artist ${artist.name}, using fallback`);
             thumbnail.innerHTML = '<div class="artist-thumbnail-fallback">♪</div>';
           }
         } catch (error) {
-          console.warn(`Failed to load thumbnail for artist ${artist.name}:`, error);
+          console.warn(`Failed to load thumbnail for artist ${artist.name} (ID: ${artist.id}):`, error);
           const thumbnail = drawerContent.querySelector(`[data-artist-id="${artist.id}"]`);
           if (thumbnail) {
             thumbnail.innerHTML = '<div class="artist-thumbnail-fallback">♪</div>';
@@ -3730,8 +3868,9 @@ class SpotifyLabelExplorer {
     
     console.log(`Getting smart recommendations for ${allArtists.length} artists across labels: ${this.currentLabels.join(', ')}`);
     
-    // Analyze cross-label relationships for each artist (reduced from 15 to 8 for better performance)
-    for (const artist of allArtists.slice(0, 8)) { 
+    // Analyze cross-label relationships for each artist (process all provided artists for pagination)
+    const artistsToProcess = allArtists.slice(0, Math.min(allArtists.length, 10)); // Process up to 10 artists
+    for (const artist of artistsToProcess) { 
       try {
         // Analyze this artist's presence across current labels
         const labelAnalysis = this.analyzeArtistLabelPresence(artist.id);
@@ -3769,10 +3908,9 @@ class SpotifyLabelExplorer {
       }
     }
     
-    // Sort by score (highest first) and return top recommendations
+    // Sort by score (highest first) and return all recommendations (no limit for pagination)
     const sortedRecommendations = recommendations
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 8);
+      .sort((a, b) => b.score - a.score);
     
     console.log(`Smart recommendations generated: ${sortedRecommendations.length}`);
     sortedRecommendations.forEach(rec => {
@@ -3797,7 +3935,7 @@ class SpotifyLabelExplorer {
       const existingIds = new Set(sortedRecommendations.map(r => r.id));
       const newFallbacks = fallbackArtists.filter(f => !existingIds.has(f.id));
       
-      const combined = [...sortedRecommendations, ...newFallbacks].slice(0, 8);
+      const combined = [...sortedRecommendations, ...newFallbacks];
       console.log(`Added ${newFallbacks.length} fallback artists, total: ${combined.length}`);
       return combined;
     }
@@ -3924,6 +4062,231 @@ class SpotifyLabelExplorer {
   }
 
   /**
+   * Load more artists for the current drawer
+   */
+  async loadMoreArtists(drawerContent) {
+    const showMoreButton = drawerContent.querySelector('.show-more-artists-btn');
+    const showMoreText = showMoreButton.querySelector('.show-more-text');
+    const showMoreLoading = showMoreButton.querySelector('.show-more-loading');
+    
+    // Show loading state
+    showMoreButton.disabled = true;
+    showMoreText.style.display = 'none';
+    showMoreLoading.style.display = 'flex';
+    
+    try {
+      // Get all artists from current results
+      const allArtists = this.getAllArtistsFromCurrentResults();
+      
+      if (this.artistOffset >= allArtists.length) {
+        // No more artists to load
+        showMoreText.textContent = 'No more artists';
+        showMoreText.style.display = 'block';
+        showMoreLoading.style.display = 'none';
+        showMoreButton.disabled = true;
+        return;
+      }
+      
+      // Get currently displayed artist IDs to avoid duplicates
+      const artistList = drawerContent.querySelector('.artist-recommendations-list');
+      const displayedArtistIds = new Set();
+      if (artistList) {
+        const existingArtistElements = artistList.querySelectorAll('.artist-recommendation-item .artist-name-link');
+        existingArtistElements.forEach(element => {
+          const artistId = element.dataset.artistId;
+          if (artistId) {
+            displayedArtistIds.add(artistId);
+          }
+        });
+      }
+      
+      // Get next batch of artists (10 more), filtering out already displayed ones
+      let nextBatch = [];
+      let currentOffset = this.artistOffset;
+      
+      while (nextBatch.length < 10 && currentOffset < allArtists.length) {
+        const artist = allArtists[currentOffset];
+        if (!displayedArtistIds.has(artist.id)) {
+          nextBatch.push(artist);
+        }
+        currentOffset++;
+      }
+      
+      // Update offset to the actual position we've reached
+      this.artistOffset = currentOffset;
+      
+      if (nextBatch.length === 0) {
+        // No more unique artists to load
+        showMoreText.textContent = 'No more artists';
+        showMoreText.style.display = 'block';
+        showMoreLoading.style.display = 'none';
+        showMoreButton.disabled = true;
+        return;
+      }
+      
+      // Get smart recommendations for the next batch
+      const currentLabelName = this.currentLabels.join(' + ');
+      const smartRecommendations = await this.getSmartArtistRecommendations(
+        nextBatch, 
+        currentLabelName, 
+        null
+      );
+      
+      // Filter out any duplicates that might still exist in smart recommendations
+      const uniqueRecommendations = smartRecommendations.filter(artist => 
+        !displayedArtistIds.has(artist.id)
+      );
+      
+      // Add new artists to the list
+      if (artistList && uniqueRecommendations.length > 0) {
+        const newArtistsHTML = uniqueRecommendations.map(artist => `
+          <div class="artist-recommendation-item" 
+               data-artist-explanation="${artist.explanation || ''}"
+               title="${artist.explanation || ''}">
+            <div class="artist-item-row">
+              <div class="artist-thumbnail-placeholder" data-artist-id="${artist.id}">
+                <div class="artist-thumbnail-loading"></div>
+              </div>
+              <strong class="artist-name-link" 
+                      data-artist-id="${artist.id}" 
+                      title="Open ${artist.name} page">${artist.name}</strong>
+              <button class="artist-other-labels-btn" 
+                      data-artist-id="${artist.id}" 
+                      data-artist-name="${artist.name}"
+                      title="View ${artist.name}'s other labels">
+                View Labels
+              </button>
+            </div>
+            <div class="artist-explanation" style="display: none;">
+              ${artist.explanation || ''}
+            </div>
+          </div>
+        `).join('');
+        
+        artistList.insertAdjacentHTML('beforeend', newArtistsHTML);
+        
+        // Setup event listeners for new artists only (not all artists)
+        const newArtistElements = artistList.querySelectorAll('.artist-recommendation-item:nth-last-child(-n+' + uniqueRecommendations.length + ')');
+        this.setupEventListenersForNewArtists(newArtistElements);
+        
+        // Load thumbnails for new artists
+        await this.loadArtistThumbnails(drawerContent, uniqueRecommendations);
+        
+        console.log(`Added ${uniqueRecommendations.length} more unique artists to drawer (offset: ${this.artistOffset}/${allArtists.length})`);
+      }
+      
+      // Update button state
+      if (this.artistOffset >= allArtists.length) {
+        showMoreText.textContent = 'No more artists';
+        showMoreButton.disabled = true;
+      } else {
+        showMoreText.textContent = 'Show more artists';
+        showMoreButton.disabled = false;
+      }
+      
+    } catch (error) {
+      console.error('Failed to load more artists:', error);
+      showMoreText.textContent = 'Error loading artists';
+      showMoreButton.disabled = true;
+    } finally {
+      // Hide loading state
+      showMoreText.style.display = 'block';
+      showMoreLoading.style.display = 'none';
+    }
+  }
+
+  /**
+   * Setup event listeners for newly added artist elements only
+   */
+  setupEventListenersForNewArtists(newArtistElements) {
+    newArtistElements.forEach(item => {
+      // Setup artist name links
+      const artistNameLink = item.querySelector('.artist-name-link');
+      if (artistNameLink) {
+        artistNameLink.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Debounce protection - disable link temporarily
+          if (artistNameLink.dataset.processing === 'true') {
+            return;
+          }
+          artistNameLink.dataset.processing = 'true';
+          
+          try {
+            const artistId = artistNameLink.dataset.artistId;
+            await this.openArtistPage(artistId);
+          } finally {
+            // Re-enable after a short delay
+            setTimeout(() => {
+              artistNameLink.dataset.processing = 'false';
+            }, 1000);
+          }
+        });
+      }
+
+      // Setup "View Labels" buttons
+      const viewLabelsButton = item.querySelector('.artist-other-labels-btn');
+      if (viewLabelsButton) {
+        viewLabelsButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Debounce protection
+          if (viewLabelsButton.dataset.processing === 'true') {
+            return;
+          }
+          viewLabelsButton.dataset.processing = 'true';
+          
+          try {
+            const artistId = viewLabelsButton.dataset.artistId;
+            const artistName = viewLabelsButton.dataset.artistName;
+            
+            // Add active state to the clicked button
+            this.setActiveArtistButton(viewLabelsButton);
+            
+            this.showOtherLabelsModal(artistId, artistName);
+          } finally {
+            // Re-enable after a short delay
+            setTimeout(() => {
+              viewLabelsButton.dataset.processing = 'false';
+            }, 500);
+          }
+        });
+      }
+
+      // Setup hover explanations
+      const explanationDiv = item.querySelector('.artist-explanation');
+      if (explanationDiv) {
+        item.addEventListener('mouseenter', () => {
+          if (explanationDiv.textContent.trim()) {
+            explanationDiv.style.display = 'block';
+            explanationDiv.style.opacity = '0';
+            explanationDiv.style.transform = 'translateY(-5px)';
+            
+            // Animate in
+            setTimeout(() => {
+              explanationDiv.style.transition = 'all 0.2s ease';
+              explanationDiv.style.opacity = '1';
+              explanationDiv.style.transform = 'translateY(0)';
+            }, 10);
+          }
+        });
+        
+        item.addEventListener('mouseleave', () => {
+          explanationDiv.style.transition = 'all 0.2s ease';
+          explanationDiv.style.opacity = '0';
+          explanationDiv.style.transform = 'translateY(-5px)';
+          
+          setTimeout(() => {
+            explanationDiv.style.display = 'none';
+          }, 200);
+        });
+      }
+    });
+  }
+
+  /**
    * Recreate the artist drawer completely with fresh recommendations
    */
   async recreateArtistDrawer() {
@@ -4003,15 +4366,19 @@ class SpotifyLabelExplorer {
         return;
       }
       
-      // Generate new smart recommendations based on all current labels
+      // Generate new smart recommendations based on all current labels (initial batch of 8)
       const combinedLabelName = this.currentLabels.join(' + ');
       console.log(`🏷️ Current labels: ${combinedLabelName}`);
       
+      const initialBatch = allArtists.slice(0, 8); // Initial batch of 8 artists
       const smartRecommendations = await this.getSmartArtistRecommendations(
-        allArtists, 
+        initialBatch, 
         combinedLabelName, 
         null // No specific original artist for combined searches
       );
+      
+      // Reset pagination offset
+      this.artistOffset = smartRecommendations.length;
       
       console.log(`🎯 Generated ${smartRecommendations.length} smart recommendations`);
       
@@ -4049,6 +4416,28 @@ class SpotifyLabelExplorer {
               </div>
             `).join('');
             
+            // Re-setup "Show more artists" button event listener
+            const showMoreButton = drawerContent.querySelector('.show-more-artists-btn');
+            if (showMoreButton) {
+              // Reset button state
+              const showMoreText = showMoreButton.querySelector('.show-more-text');
+              const showMoreLoading = showMoreButton.querySelector('.show-more-loading');
+              showMoreText.textContent = 'Show more artists';
+              showMoreText.style.display = 'block';
+              showMoreLoading.style.display = 'none';
+              showMoreButton.disabled = false;
+              
+              // Remove old event listeners and add new one
+              const newButton = showMoreButton.cloneNode(true);
+              showMoreButton.parentNode.replaceChild(newButton, showMoreButton);
+              
+              newButton.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await this.loadMoreArtists(drawerContent);
+              });
+            }
+            
             console.log('✅ HTML updated, setting up event listeners');
             
             // Re-setup event listeners for the new content
@@ -4080,30 +4469,67 @@ class SpotifyLabelExplorer {
    * Setup event listeners for artist drawer content (extracted for reuse)
    */
   setupArtistDrawerEventListeners(drawerContent) {
-    // Setup artist name links for opening artist pages
+    // Remove existing event listeners by cloning and replacing elements
     const artistNameLinks = drawerContent.querySelectorAll('.artist-name-link');
     artistNameLinks.forEach(link => {
-      link.addEventListener('click', async (e) => {
+      // Clone the element to remove all existing event listeners
+      const newLink = link.cloneNode(true);
+      link.parentNode.replaceChild(newLink, link);
+      
+      // Add single event listener with debounce protection
+      newLink.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const artistId = link.dataset.artistId;
-        await this.openArtistPage(artistId);
+        
+        // Debounce protection - disable link temporarily
+        if (newLink.dataset.processing === 'true') {
+          return;
+        }
+        newLink.dataset.processing = 'true';
+        
+        try {
+          const artistId = newLink.dataset.artistId;
+          await this.openArtistPage(artistId);
+        } finally {
+          // Re-enable after a short delay
+          setTimeout(() => {
+            newLink.dataset.processing = 'false';
+          }, 1000);
+        }
       });
     });
 
     // Setup "View Labels" buttons
     const viewLabelsButtons = drawerContent.querySelectorAll('.artist-other-labels-btn');
     viewLabelsButtons.forEach(button => {
-      button.addEventListener('click', (e) => {
+      // Clone the element to remove all existing event listeners
+      const newButton = button.cloneNode(true);
+      button.parentNode.replaceChild(newButton, button);
+      
+      newButton.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const artistId = button.dataset.artistId;
-        const artistName = button.dataset.artistName;
         
-        // Add active state to the clicked button
-        this.setActiveArtistButton(button);
+        // Debounce protection
+        if (newButton.dataset.processing === 'true') {
+          return;
+        }
+        newButton.dataset.processing = 'true';
         
-        this.showOtherLabelsModal(artistId, artistName);
+        try {
+          const artistId = newButton.dataset.artistId;
+          const artistName = newButton.dataset.artistName;
+          
+          // Add active state to the clicked button
+          this.setActiveArtistButton(newButton);
+          
+          this.showOtherLabelsModal(artistId, artistName);
+        } finally {
+          // Re-enable after a short delay
+          setTimeout(() => {
+            newButton.dataset.processing = 'false';
+          }, 500);
+        }
       });
     });
 
@@ -4181,27 +4607,42 @@ class SpotifyLabelExplorer {
    * Toggle the Related Artists drawer visibility
    */
   toggleRelatedArtistsDrawer(button) {
-    if (!this.currentArtistDrawer) {
-      console.log('No artist drawer found to toggle');
-      return;
-    }
-
-    // Toggle the visibility state
-    this.artistDrawerVisible = !this.artistDrawerVisible;
-    
-    // Update drawer visibility
-    if (this.artistDrawerVisible) {
-      this.currentArtistDrawer.classList.add('open');
-      this.currentArtistDrawer.style.display = 'block';
+    if (this.currentArtistDrawer) {
+      // Drawer exists - remove it
+      this.currentArtistDrawer.remove();
+      this.currentArtistDrawer = null;
+      this.artistDrawerVisible = false;
+      this.artistOffset = 0; // Reset offset when closing drawer
+      console.log('Artist drawer removed');
     } else {
-      this.currentArtistDrawer.classList.remove('open');
-      // Don't set display: none to allow for animation
+      // Drawer doesn't exist - create it
+      console.log('Creating new artist drawer');
+      
+      // Get current scatalog or create a simple one from current results
+      let scatalog;
+      if (this.originalAlbums && this.originalAlbums.length > 0) {
+        const allArtists = this.getAllArtistsFromCurrentResults();
+        const simpleArtistRecommendations = allArtists.slice(0, 6).map(artist => ({
+          id: artist.id,
+          name: artist.name,
+          albumCount: artist.albumCount,
+          totalLabelsCount: 'multiple',
+          isGray: true
+        }));
+        scatalog = { artistButtons: simpleArtistRecommendations };
+      } else {
+        scatalog = { artistButtons: [] };
+      }
+      
+      const drawer = this.createArtistDrawer(scatalog);
+      if (drawer) {
+        this.artistDrawerVisible = true;
+        console.log('Artist drawer created');
+      }
     }
     
     // Update button appearance based on state
     this.updateRelatedArtistsButton(button);
-    
-    console.log('Artist drawer toggled:', this.artistDrawerVisible ? 'visible' : 'hidden');
   }
 
   /**

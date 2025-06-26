@@ -6,34 +6,45 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  margin-left: 8px;
+  margin-left: 6px;
   background: transparent;
   border: none;
-  color: #b3b3b3;
+  color: #6a6a6a;
   font-family: inherit;
   cursor: pointer;
   transition: all 0.2s ease;
   z-index: 10;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  opacity: 0.7;
 }
 
 .spotify-label-explorer-btn:hover {
-  color: #ffffff;
-  transform: scale(1.1);
+  color: #1db954;
+  background: rgba(29, 185, 84, 0.1);
+  opacity: 1;
+  transform: scale(1.05);
 }
 
 .spotify-label-explorer-btn:active {
   transform: scale(0.95);
+  background: rgba(29, 185, 84, 0.15);
 }
 
 .spotify-label-explorer-btn svg {
   flex-shrink: 0;
-  width: 60%;
-  height: 60%;
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  transition: fill 0.2s ease;
 }
 
-/* Modal Overlay */
+.spotify-label-explorer-btn:hover svg {
+  fill: #1db954;
+}
+
+/* Modal Overlay - Three-part Flexbox Layout */
 .spotify-label-explorer-overlay {
   position: fixed;
   top: 0;
@@ -44,10 +55,21 @@
   backdrop-filter: blur(4px);
   z-index: 9999;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   padding: 20px;
+  gap: 20px;
   animation: fadeIn 0.2s ease;
+}
+
+/* Three-part Layout Container */
+.scatalog-layout-container {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  gap: 20px;
+  align-items: stretch;
 }
 
 @keyframes fadeIn {
@@ -59,19 +81,21 @@
   }
 }
 
-/* Modal Container */
+/* Modal Container - Central Panel */
 .spotify-label-explorer-modal {
   background: linear-gradient(135deg, #121212 0%, #141414 100%);
   border-radius: 16px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
-  max-width: 90vw;
-  max-height: 90vh;
-  width: 800px;
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   animation: slideIn 0.3s ease;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  order: 2; /* Always position in the center */
 }
 
 @keyframes slideIn {
@@ -85,15 +109,19 @@
   }
 }
 
+/* slideInLeft and slideInRight animations removed - using flexbox order instead */
+
 /* Modal Header */
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 24px 28px;
+  padding: 20px 28px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(135deg, #181818 0%, #1a1a1a 100%);
   backdrop-filter: blur(10px);
+  height: 72px;
+  box-sizing: border-box;
 }
 
 .modal-header h2 {
@@ -481,7 +509,7 @@
   position: relative;
   width: 44px;
   height: 24px;
-  background: #404040;
+  background: #282828;
   border-radius: 12px;
   transition: background-color 0.2s ease;
 }
@@ -493,9 +521,9 @@
   left: 2px;
   width: 20px;
   height: 20px;
-  background: #ffffff;
+  background: #404040;
   border-radius: 50%;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
 .toggle-label input[type="checkbox"]:checked + .toggle-slider {
@@ -504,6 +532,7 @@
 
 .toggle-label input[type="checkbox"]:checked + .toggle-slider::before {
   transform: translateX(20px);
+  background: #404040;
 }
 
 .toggle-text {
@@ -659,128 +688,217 @@
   font-weight: 400;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .spotify-label-explorer-modal {
-    width: 95vw;
-    max-height: 95vh;
+/* Responsive Design for Three-part Layout */
+@media (max-width: 1200px) {
+  .scatalog-layout-container {
+    gap: 16px;
   }
   
+  .scatalog-labels-drawer,
+  .scatalog-artist-drawer {
+    width: 280px;
+    min-width: 250px;
+  }
+}
+
+@media (max-width: 992px) {
+  .spotify-label-explorer-overlay {
+    padding: 15px;
+    gap: 15px;
+  }
+  
+  .scatalog-layout-container {
+    flex-direction: column;
+    max-width: 800px;
+    gap: 15px;
+  }
+  
+  .scatalog-labels-drawer,
+  .scatalog-artist-drawer {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    min-height: 200px;
+    max-height: 300px;
+  }
+  
+  .spotify-label-explorer-modal {
+    max-width: none;
+    flex: 2;
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .spotify-label-explorer-overlay {
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .scatalog-layout-container {
+    gap: 10px;
+  }
+
   .modal-header {
     padding: 16px 20px;
+    height: 60px;
   }
-  
+
   .modal-header h2 {
     font-size: 20px;
   }
-  
+
+  .labels-drawer-header,
+  .artist-drawer-header {
+    padding: 16px 20px;
+    height: 60px;
+  }
+
   .label-count {
     font-size: 16px;
   }
-  
+
   .header-controls {
     gap: 8px;
   }
-  
+
   .rate-limit-dot {
     width: 10px;
     height: 10px;
   }
-  
+
   .modal-content {
-    padding: 20px;
+    padding: 16px;
   }
-  
+
   .modal-footer {
-    padding: 12px 20px;
+    padding: 12px 16px;
   }
-  
+
   .modal-pressure-label {
     font-size: 11px;
   }
-  
+
   .modal-pressure-bar {
-    height: 5px;
+    height: 4px;
   }
-  
+
   .results-grid {
+    gap: 12px;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 16px;
   }
-  
+
   .album-card {
-    padding: 12px;
+    min-height: 180px;
   }
 
   .results-header-top {
     flex-direction: column;
     gap: 12px;
+    align-items: stretch;
   }
 
   .results-header-actions {
-    align-self: stretch;
+    justify-content: center;
   }
 
   .save-scatalog-btn {
-    padding: 8px 14px;
-    font-size: 13px;
+    font-size: 12px;
+    padding: 8px 12px;
   }
-  
+
   .spotify-label-explorer-btn {
     width: 28px;
     height: 28px;
-    padding: 0;
-    margin-left: 4px;
+  }
+
+  .spotify-label-explorer-btn svg {
+    width: 14px;
+    height: 14px;
   }
   
-  .spotify-label-explorer-btn svg {
-    width: 60%;
-    height: 60%;
+  .scatalog-labels-drawer,
+  .scatalog-artist-drawer {
+    min-height: 150px;
+    max-height: 250px;
+  }
+  
+  .labels-drawer-body,
+  .artist-drawer-body {
+    padding: 12px;
   }
 }
 
 @media (max-width: 480px) {
   .spotify-label-explorer-overlay {
-    padding: 10px;
+    padding: 8px;
+    gap: 8px;
   }
   
+  .scatalog-layout-container {
+    gap: 8px;
+  }
+
   .modal-footer {
-    padding: 10px 16px;
+    padding: 8px 12px;
   }
-  
+
   .modal-pressure-label {
     font-size: 10px;
   }
-  
+
   .modal-pressure-bar {
-    height: 4px;
+    height: 3px;
   }
-  
+
   .results-grid {
+    gap: 8px;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
   }
-  
+
   .album-title {
     font-size: 13px;
   }
-  
+
   .album-artist {
     font-size: 11px;
   }
-  
+
   .album-year {
     font-size: 10px;
   }
 
   .save-scatalog-btn {
-    padding: 6px 12px;
-    font-size: 12px;
+    font-size: 11px;
+    padding: 6px 10px;
   }
 
   .save-scatalog-btn svg {
     width: 14px;
     height: 14px;
+  }
+  
+  .scatalog-labels-drawer,
+  .scatalog-artist-drawer {
+    min-height: 120px;
+    max-height: 200px;
+  }
+  
+  .labels-drawer-body,
+  .artist-drawer-body {
+    padding: 8px;
+  }
+  
+  .labels-drawer-header,
+  .artist-drawer-header {
+    padding: 16px 20px;
+    height: 60px;
+  }
+  
+  .labels-drawer-header h3,
+  .artist-drawer-header h3 {
+    font-size: 13px;
   }
 }
 
@@ -1186,6 +1304,84 @@
   height: 12px;
 }
 
+/* Add Label Input Container */
+.add-label-input-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 0 2px;
+}
+
+.add-label-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 8px 16px;
+  color: #ffffff;
+  font-size: 13px;
+  font-family: 'Spotify Circular', 'Helvetica Neue', Arial, sans-serif;
+  transition: all 0.2s ease;
+  outline: none;
+  min-width: 0;
+}
+
+.add-label-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.add-label-input:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.add-label-input:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #1db954;
+  box-shadow: 0 0 0 1px rgba(29, 185, 84, 0.3);
+}
+
+.add-label-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #1db954;
+  border: none;
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.add-label-submit-btn:hover:not(:disabled) {
+  background: #1ed760;
+  opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+}
+
+.add-label-submit-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.add-label-submit-btn:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.add-label-submit-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
 /* Other Labels Modal */
 .other-labels-modal {
   width: 700px;
@@ -1216,6 +1412,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.2s ease;
   margin-bottom: 8px;
+  min-height: 140px;
 }
 
 .other-label-item:hover {
@@ -1244,6 +1441,10 @@
   color: #b3b3b3;
   font-size: 14px;
   line-height: 1.4;
+  min-height: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .artist-releases {
@@ -1265,10 +1466,11 @@
   color: #6a6a6a;
   font-size: 13px;
   transition: color 0.2s ease;
-  min-height: 1.2em;
-  line-height: 1.2;
+  min-height: 1.4em;
+  line-height: 1.4;
   display: inline-block;
-  min-width: 60px;
+  min-width: 80px;
+  vertical-align: top;
 }
 
 .label-total-count.loading .total-text {
@@ -1418,8 +1620,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   background: #282828;
   color: #b3b3b3;
@@ -1461,33 +1663,37 @@
 
 .related-artists-btn svg {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
 }
 
 /* Save Scatalog Button */
 .save-scatalog-btn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #1db954;
   border: none;
-  border-radius: 12px;
+  border-radius: 50%;
   color: #000000;
   font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   box-shadow: none;
   white-space: nowrap;
+  padding: 0;
+  opacity: 0.9;
 }
 
 .save-scatalog-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1ed760 0%, #1fdf64 100%);
-  transform: translateY(-2px);
-  box-shadow: none;
+  background: #1ed760;
+  opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(29, 185, 84, 0.3);
 }
 
 .save-scatalog-btn:active:not(:disabled) {
@@ -1501,14 +1707,15 @@
 }
 
 .save-scatalog-btn.saved {
-  background: linear-gradient(135deg, #1ed760 0%, #1fdf64 100%);
+  background: #1ed760;
   pointer-events: none;
+  opacity: 1;
 }
 
 .save-scatalog-btn svg {
   flex-shrink: 0;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 /* Clickable Label Cards */
@@ -1545,17 +1752,26 @@
 
 .add-overlay {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
+  gap: 8px;
 }
 
 .add-overlay svg {
   width: 24px;
   height: 24px;
   opacity: 0.8;
+}
+
+.add-overlay-text {
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  opacity: 0.9;
 }
 
 .loading-spinner {
@@ -1565,6 +1781,20 @@
   border-top: 2px solid #ffffff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+.loading-labels {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+}
+
+.loading-text {
+  color: #b3b3b3;
+  font-size: 16px;
 }
 
 .success-check {
@@ -1642,12 +1872,33 @@
     width: 10px;
     height: 10px;
   }
+
+  .add-label-input-container {
+    margin-top: 8px;
+    gap: 6px;
+  }
+
+  .add-label-input {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  .add-label-submit-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .add-label-submit-btn svg {
+    width: 12px;
+    height: 12px;
+  }
   
   .other-label-item {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
     padding: 12px;
+    min-height: 120px;
   }
   
   .label-action-buttons {
@@ -1746,9 +1997,30 @@
     width: 8px;
     height: 8px;
   }
+
+  .add-label-input-container {
+    margin-top: 6px;
+    gap: 4px;
+  }
+
+  .add-label-input {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+
+  .add-label-submit-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .add-label-submit-btn svg {
+    width: 11px;
+    height: 11px;
+  }
   
   .other-label-item {
     padding: 10px;
+    min-height: 110px;
   }
   
   .label-action-buttons {
@@ -1973,7 +2245,7 @@
   position: fixed;
   bottom: 90px;
   right: 20px;
-  z-index: 10000000;
+  z-index: 9998;
   font-family: 'Spotify Circular', 'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -2313,68 +2585,31 @@
   }
 }
 
-/* Labels Drawer Styles */
+/* Labels Drawer Styles - Left Panel */
 .scatalog-labels-drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 10001; /* Higher than modal */
   width: 320px;
-  height: 100vh;
+  min-width: 280px;
+  max-width: 360px;
+  height: 100%;
   background: linear-gradient(135deg, #121212 0%, #141414 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(10px);
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateX(-100%);
-  opacity: 0;
-  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  order: 1; /* Always position on the left */
 }
 
 .scatalog-labels-drawer.open {
-  transform: translateX(0);
-  opacity: 1;
-  pointer-events: all;
+  /* Always visible in flex layout */
 }
 
-.labels-drawer-toggle {
-  position: absolute;
-  top: 50%;
-  right: -50px;
-  transform: translateY(-50%);
-  background: linear-gradient(135deg, rgba(29, 185, 84, 1), rgba(29, 185, 84, 0.8));
-  border: none;
-  border-radius: 0 12px 12px 0;
-  color: white;
-  padding: 16px 8px;
-  cursor: pointer;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  font-size: 13px;
-  font-weight: 700;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 20px rgba(29, 185, 84, 0.4);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 100px;
-  z-index: 10002;
-}
-
-.labels-drawer-toggle:hover {
-  background: linear-gradient(135deg, rgba(29, 185, 84, 1), rgba(29, 185, 84, 0.8));
-  transform: translateY(-50%) translateX(2px);
-  box-shadow: 0 6px 20px rgba(29, 185, 84, 0.4);
-}
-
-.scatalog-labels-drawer.open .labels-drawer-toggle {
-  background: linear-gradient(135deg, rgba(29, 185, 84, 0.8), rgba(29, 185, 84, 0.6));
-}
-
-.scatalog-labels-drawer.open .labels-drawer-toggle:hover {
-  background: linear-gradient(135deg, rgba(29, 185, 84, 0.9), rgba(29, 185, 84, 0.7));
+/* Remove toggle buttons - not needed in flex layout */
+.labels-drawer-toggle,
+.artist-drawer-toggle {
+  display: none;
 }
 
 .labels-drawer-content {
@@ -2385,13 +2620,15 @@
 }
 
 .labels-drawer-header {
-  padding: 20px;
+  padding: 20px 28px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: linear-gradient(135deg, #1a1a1a 0%, #1c1c1c 100%);
   flex-shrink: 0;
+  height: 72px;
+  box-sizing: border-box;
 }
 
 .labels-drawer-header h3 {
@@ -2450,69 +2687,28 @@
   background: rgba(29, 185, 84, 0.5);
 }
 
-/* Artist Drawer Styles */
+/* Artist Drawer Styles - Right Panel */
 .scatalog-artist-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  z-index: 10001; /* Higher than modal */
   width: 320px;
+  min-width: 280px;
+  max-width: 360px;
+  height: 100%;
   background: linear-gradient(135deg, #121212 0%, #141414 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(10px);
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateX(100%);
-  opacity: 0;
-  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  order: 3; /* Always position on the right */
 }
 
 .scatalog-artist-drawer.open {
-  transform: translateX(0);
-  opacity: 1;
-  pointer-events: all;
+  /* Always visible in flex layout */
 }
 
-.artist-drawer-toggle {
-  position: absolute;
-  top: 50%;
-  left: -50px;
-  transform: translateY(-50%);
-  background: linear-gradient(135deg, rgba(29, 185, 84, 1), rgba(29, 185, 84, 0.8));
-  border: none;
-  border-radius: 12px 0 0 12px;
-  color: white;
-  padding: 16px 8px;
-  cursor: pointer;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  font-size: 13px;
-  font-weight: 700;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 20px rgba(29, 185, 84, 0.4);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 100px;
-  z-index: 10002;
-}
 
-.artist-drawer-toggle:hover {
-  background: linear-gradient(135deg, rgba(29, 185, 84, 1), rgba(29, 185, 84, 0.8));
-  transform: translateY(-50%) translateX(-2px);
-  box-shadow: 0 6px 20px rgba(29, 185, 84, 0.4);
-}
-
-.artist-drawer-toggle svg {
-  transition: transform 0.3s ease;
-}
-
-.scatalog-artist-drawer.open .artist-drawer-toggle {
-  background: linear-gradient(135deg, rgba(220, 53, 69, 0.9), rgba(220, 53, 69, 0.7));
-  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.3);
-}
 
 .scatalog-artist-drawer.open .artist-drawer-toggle:hover {
   background: linear-gradient(135deg, rgba(220, 53, 69, 1), rgba(220, 53, 69, 0.8));
@@ -2529,11 +2725,13 @@
 .artist-drawer-header {
   background: linear-gradient(135deg, #181818 0%, #1a1a1a 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 16px 20px;
+  padding: 20px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+  height: 72px;
+  box-sizing: border-box;
 }
 
 .artist-drawer-header h3 {
@@ -2684,58 +2882,7 @@
   }
 }
 
-/* Animation states */
-.scatalog-artist-drawer.slide-in {
-  animation: drawerSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-.scatalog-artist-drawer.slide-out {
-  animation: drawerSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-@keyframes drawerSlideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes drawerSlideOut {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-@keyframes labelsDrawerSlideIn {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes labelsDrawerSlideOut {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-}
+/* Removed slide animations - using flexbox order for consistent positioning */
 
 /* Label card fade-out animation */
 @keyframes labelFadeOut {
@@ -2897,6 +3044,52 @@
   display: none !important; /* Hidden by default - can be enabled for debug mode */
 }
 
+/* Show More Artists Button */
+.show-more-artists-container {
+  padding: 16px 12px 8px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 8px;
+}
+
+.show-more-artists-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(29, 185, 84, 0.1);
+  border: 1px solid rgba(29, 185, 84, 0.3);
+  border-radius: 8px;
+  color: #1db954;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.show-more-artists-btn:hover:not(:disabled) {
+  background: rgba(29, 185, 84, 0.2);
+  border-color: rgba(29, 185, 84, 0.5);
+  transform: translateY(-1px);
+}
+
+.show-more-artists-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.show-more-artists-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.show-more-loading .loading-spinner {
+  width: 16px;
+  height: 16px;
+}
+
 /* Scatalog metadata styling */
 .scatalog-metadata {
   text-align: center;
@@ -2909,4 +3102,124 @@
   color: #666;
   font-size: 11px;
   opacity: 0.8;
-} 
+}
+
+/* Header Add Label Container */
+.header-add-label-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-add-label-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 6px 12px;
+  color: #ffffff;
+  font-size: 12px;
+  font-family: 'Spotify Circular', 'Helvetica Neue', Arial, sans-serif;
+  transition: all 0.2s ease;
+  outline: none;
+  width: 160px;
+  min-width: 160px;
+}
+
+.header-add-label-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.header-add-label-input:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.header-add-label-input:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #1db954;
+  box-shadow: 0 0 0 1px rgba(29, 185, 84, 0.3);
+}
+
+.header-add-label-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #1db954;
+  border: none;
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  opacity: 0.9;
+  margin-right: 12px;
+}
+
+.header-add-label-btn:hover:not(:disabled) {
+  background: #1ed760;
+  opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(29, 185, 84, 0.3);
+}
+
+.header-add-label-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.header-add-label-btn:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.header-add-label-btn svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
+/* Removed header divider */
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .header-add-label-input {
+    width: 130px;
+    min-width: 130px;
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+
+  .header-add-label-btn {
+    width: 26px;
+    height: 26px;
+    margin-right: 10px;
+  }
+
+  .header-add-label-btn svg {
+    width: 11px;
+    height: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-add-label-input {
+    width: 110px;
+    min-width: 110px;
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+
+  .header-add-label-btn {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+  }
+
+  .header-add-label-btn svg {
+    width: 10px;
+    height: 10px;
+  }
+}

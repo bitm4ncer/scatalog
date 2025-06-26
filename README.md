@@ -1,7 +1,24 @@
-# scatalog 0.1.0
+# scatalog 0.1.1
 
-A Chrome extension for exploring entire label catalogs on Spotify.
+A Chrome extension for label catalog exploration on Spotify.
 
+
+
+**Independent labels have been the driving force** behind genre innovation and musical diversity throughout history. Countless musical styles and movements have originated from these independent labels, who operate outside the mainstream spotlight of curated playlists and algorithmic recommendations.
+
+
+### active exploration
+
+Music discovery should be about exploration and connection, not algorithmic limitations. 
+
+- Browse complete label catalogs 
+- Discover new artists through label connections  
+- Explore the rich ecosystem of independent music
+
+
+
+
+###  Features
 
 _Browse the entire Spotify catalog of any label.
 
@@ -29,8 +46,9 @@ _________________________________________________
 5. Click "Load unpacked" and select the extracted folder
 
 ### 2. Get Spotify API Credentials
-1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Click "Create App" and fill in any app name and description
+1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and Log in
+2. Go to Dashboard via the Profile Button in the top right
+3. Click "Create App" and fill in any app name and description
 4. Copy your **Client ID** and **Client Secret**
 
 ### 3. Configure API Access
@@ -42,6 +60,14 @@ _________________________________________________
 1. Go to [open.spotify.com](https://open.spotify.com)
 2. Click the scatlog button next to the track time
 3. Explore that record label's entire catalog
+
+
+
+
+
+
+
+
 
 
 

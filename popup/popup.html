@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>scatalog Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="popup-header">
+      <div class="logo">
+        <img src="../icons/icon128.png" alt="scatalog icon" class="logo-icon">
+        <h1>scatalog</h1>
+      </div>
+    </header>
+
+    <main class="popup-main">
+      <div class="status-section">
+        <div class="status-indicator" id="statusIndicator">
+          <div class="status-dot"></div>
+          <span id="statusText">Not configured</span>
+          <div class="extension-toggle">
+            <label class="toggle-label">
+              <input type="checkbox" id="extensionToggle" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <form class="credentials-form" id="credentialsForm">
+        <div class="form-group">
+          <label for="clientId">Client ID</label>
+          <input 
+            type="text" 
+            id="clientId" 
+            placeholder="Enter your Spotify Client ID"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <small class="help-text">Your Spotify app's Client ID</small>
+        </div>
+
+        <div class="form-group">
+          <label for="clientSecret">Client Secret</label>
+          <input 
+            type="password" 
+            id="clientSecret" 
+            placeholder="Enter your Spotify Client Secret"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <small class="help-text">Your Spotify app's Client Secret</small>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="saveBtn">
+            <span class="btn-text">Save Credentials</span>
+            <div class="btn-spinner" style="display: none;"></div>
+          </button>
+          <button type="button" class="btn btn-secondary" id="testBtn" disabled>
+            Test Connection
+          </button>
+        </div>
+      </form>
+
+      <div class="setup-guide">
+        <div class="api-help-banner">
+          <div class="help-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#1db954">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+            </svg>
+          </div>
+          <div class="help-content">
+            <strong>Need API credentials?</strong>
+            <p>Get your free Spotify API key from the <a href="https://developer.spotify.com/dashboard" target="_blank" class="api-link">Spotify Developer Dashboard</a></p>
+          </div>
+        </div>
+        
+        <details>
+          <summary>Step-by-step setup guide</summary>
+          <div class="guide-content">
+            <ol>
+              <li>
+                <strong>Create a Spotify App:</strong>
+                <p>Visit <a href="https://developer.spotify.com/dashboard" target="_blank" class="inline-link">developer.spotify.com/dashboard</a> and log in with your Spotify account.</p>
+                <p>Click "Create App" and fill in the required information (app name and description).</p>
+              </li>
+              <li>
+                <strong>Get your credentials:</strong>
+                <p>Once created, click on your app to view its details.</p>
+                <p>Copy the <strong>Client ID</strong> and <strong>Client Secret</strong> from the app settings.</p>
+              </li>
+              <li>
+                <strong>Configure redirect URI (optional):</strong>
+                <p>In your app settings, add <code>https://open.spotify.com</code> as a redirect URI.</p>
+              </li>
+              <li>
+                <strong>Enter credentials:</strong>
+                <p>Paste your <strong>Client ID</strong> and <strong>Client Secret</strong> in the form above and click "Save Credentials".</p>
+              </li>
+            </ol>
+            <div class="note">
+              <strong>Privacy Note:</strong> This extension only accesses public Spotify catalog data. It doesn't access your personal playlists, listening history, or account information.
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="api-stats-section">
+        <div class="api-pressure-indicator">
+          <div class="pressure-label">
+            <span>API Pressure</span>
+            <span class="pressure-value" id="pressureValue">0/100</span>
+          </div>
+          <div class="pressure-bar">
+            <div class="pressure-fill" id="pressureFill"></div>
+          </div>
+        </div>
+        
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-label">API Calls Today</span>
+            <span class="stat-value" id="apiCallsToday">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Cache Hits</span>
+            <span class="stat-value" id="cacheHits">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Rate Limit Status</span>
+            <span class="stat-value" id="rateLimitStatus">Normal</span>
+          </div>
+        </div>
+        <button type="button" class="btn btn-small btn-secondary" id="resetStatsBtn">Reset Stats</button>
+      </div>
+
+    </main>
+
+    <footer class="popup-footer">
+      <div class="footer-links">
+        <a href="https://github.com/your-username/spotify-label-explorer" target="_blank">GitHub</a>
+        <span>•</span>
+        <a href="https://developer.spotify.com/terms" target="_blank">Spotify API Terms</a>
+      </div>
+      <p class="version">Version 0.1.0</p>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html> 

@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "scatalog",
+  "version": "0.1.0",
+  "description": "Explore record label catalogs directly from Spotify's interface. Click on any label to discover their entire discography.",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://open.spotify.com/*",
+    "https://accounts.spotify.com/*",
+    "https://api.spotify.com/*"
+  ],
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://open.spotify.com/*"],
+      "js": ["utils/spotify-api.js", "content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "scatalog Settings",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["content/content.css", "icons/info_icon.svg"],
+      "matches": ["https://open.spotify.com/*"]
+    }
+  ]
+} 

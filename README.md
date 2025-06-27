@@ -19,8 +19,6 @@ _Explore related artists and all their labels
 
 _Add related labels to your search
 
-![label card Screenshot.](./content/img/label-screenshot.png)
-
 _Sort and search catalogs
 
 _Save *scatalog* for later revision

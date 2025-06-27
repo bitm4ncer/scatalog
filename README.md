@@ -5,16 +5,6 @@
 
 
 
-### active exploration
-
-Music discovery should be about exploration and connection, not algorithmic limitations. 
-
-- Browse complete label catalogs 
-- Discover new artists through label connections  
-- *Explore the rich ecosystem of independent music*
-
-
-**Independent labels have been the driving force** behind genre innovation and musical diversity throughout history. Countless musical styles and movements have originated from these independent labels, who operate outside the mainstream spotlight of curated playlists, algorithmic recommendations and major contracts. 
 
 
 ![Screenshot of the scatalog Interface](./content/img/main-screenshot.png)
@@ -25,18 +15,20 @@ Music discovery should be about exploration and connection, not algorithmic limi
 
 _Browse the entire Spotify catalog of any label
 
-_Explore related artists and all thier labels
+_Explore related artists and all their labels
 
 _Add related labels to your search
 
 _Sort and search catalogs
 
-_Save *scatalog* in for later revision
+_Save *scatalog* for later revision
 
 
 
 
 _________________________________________________
+
+
 
 ##  Quick Start Guide
 
@@ -69,12 +61,23 @@ _________________________________________________
 
 
 
+_________________________________________________
+
+
+### active exploration
+
+Music discovery should be about exploration and connection, not algorithmic limitations. 
+
+- Browse complete label catalogs 
+- Discover new artists through label connections  
+- *Explore the rich ecosystem of independent music*
+
+
+**Independent labels have been the driving force** behind genre innovation and musical diversity throughout history. Countless musical styles and movements have originated from these independent labels, who operate outside the mainstream spotlight of curated playlists, algorithmic recommendations and major label contracts. 
 
 
 
-
-
-
+![Screenshot of Spotify interface showing a track titled "Who Knows Where The Time Goes" by Participation Trophy, with playback controls and track details visible.](./content/img/demo.gif)
 
 
 

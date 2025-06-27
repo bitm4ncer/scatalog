@@ -36,8 +36,8 @@ _________________________________________________
 ### 1. Install the Extension
 1. Download and extract this repository zip (Code → Download ZIP)
 4. Open Extension Manager of your Chrome, Brave or other Chromium based Browser (go to `chrome://extensions/` or `brave://extensions/`)
-4. Enable "Developer mode" (toggle in top right)
-5. Click "Load unpacked" and select the extracted folder *scatalog-main*
+4. Enable "Developer mode" (toggle in top)
+5. Click "Load unpacked" and select the extracted folder `scatalog-main`
 
 ### 2. Get Spotify API Credentials
 1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and Log in
@@ -54,7 +54,7 @@ _________________________________________________
 
 ### 4. Start Exploring
 1. Go to [open.spotify.com](https://open.spotify.com)
-2. Click the scatlog button next to the track time
+2. Click the scatalog button next to the track time
 ![Screenshot of Spotify interface showing a track titled "Who Knows Where The Time Goes" by Participation Trophy, with playback controls and track details visible.](./content/img/button-screenshot.png)
 
 

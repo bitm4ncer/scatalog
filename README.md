@@ -35,7 +35,7 @@ _________________________________________________
 
 ### 1. Install the Extension
 1. Download and extract this repository zip (Code → Download ZIP)
-4. Open Extension Manager of your Chrome, Brave or other Chromium based Broser (go to `chrome://extensions/` or `brave://extensions/`)
+4. Open Extension Manager of your Chrome, Brave or other Chromium based Browser (go to `chrome://extensions/` or `brave://extensions/`)
 4. Enable "Developer mode" (toggle in top right)
 5. Click "Load unpacked" and select the extracted folder *scatalog-main*
 

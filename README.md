@@ -9,7 +9,7 @@
 
 ###  Features
 
-- Browse entire catalogs of any label on Spotify
+- Browse entire catalog of any label on Spotify
 
 - Explore related artists and their other labels. 
 

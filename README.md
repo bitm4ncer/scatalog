@@ -68,7 +68,7 @@ Music discovery should be about exploration and connection, not strategic limita
 - *Explore the rich ecosystem of independent music*
 
 
-**Independent labels have been the driving force** behind genre innovation and musical diversity. Who operates outside the mainstream spotlight of curated playlists, algorithmic recommendations and major label contracts deserves to be found. Labels deserver their own spotify page.  
+**Independent labels are the driving force** behind genre innovation and musical diversity. Who operates outside the mainstream spotlight of curated playlists, algorithmic recommendations and major label contracts deserves to be found. Labels deserver their own spotify page.  
 
 
 

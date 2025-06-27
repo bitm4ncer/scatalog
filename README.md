@@ -68,7 +68,7 @@ _________________________________________________
 
 ### active exploration
 
-Music discovery should be about exploration and connection, not algorithmic limitations. 
+Music discovery should be about exploration and connection, not strategic limitations. 
 
 - Browse complete label catalogs 
 - Discover new artists through label connections  

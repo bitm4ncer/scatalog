@@ -2840,8 +2840,11 @@ class SpotifyLabelExplorer {
           if (this.openInNewTab) {
             window.open(spotifyUrl, '_blank');
           } else {
-            window.location.href = spotifyUrl;
+            this.navigateToSpotifyUrl(spotifyUrl);
           }
+          
+          // Close the modal after navigation
+          this.closeModal();
         }
       });
     });
@@ -3078,6 +3081,68 @@ class SpotifyLabelExplorer {
   }
 
   /**
+   * Navigate to Spotify URL without page reload (client-side navigation)
+   * This preserves music playback by using Spotify's internal routing
+   */
+  navigateToSpotifyUrl(spotifyUrl) {
+    try {
+      // Extract the path from the Spotify URL
+      const url = new URL(spotifyUrl);
+      const newPath = url.pathname + url.search + url.hash;
+      
+      console.log('scatalog: Navigating to', newPath, 'without page reload');
+      
+      // Method 1: Try to use Spotify's internal navigation if available
+      if (window.history && window.history.pushState) {
+        // Use History API to change URL without reload
+        window.history.pushState({}, '', newPath);
+        
+        // Trigger Spotify's router to handle the new URL
+        // Spotify listens for popstate events and URL changes
+        window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+        
+        // Also try triggering hashchange for additional compatibility
+        if (url.hash) {
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+        }
+        
+        // Try to trigger Spotify's internal navigation system
+        // Look for React Router or other SPA routing systems
+        if (window.__spotify && window.__spotify.router) {
+          window.__spotify.router.navigate(newPath);
+        } else if (window.Spotify && window.Spotify.Router) {
+          window.Spotify.Router.navigate(newPath);
+        }
+        
+        return; // Exit if successful
+      }
+      
+      // Method 2: Fallback to creating a synthetic click on an internal link
+      // This mimics user clicking on a Spotify link, preserving SPA behavior
+      const tempLink = document.createElement('a');
+      tempLink.href = newPath;
+      tempLink.setAttribute('data-testid', 'internal-track-link'); // Spotify's internal link identifier
+      tempLink.style.display = 'none';
+      document.body.appendChild(tempLink);
+      
+      // Simulate click to trigger Spotify's internal navigation
+      tempLink.click();
+      
+      // Clean up
+      setTimeout(() => {
+        if (tempLink.parentNode) {
+          tempLink.parentNode.removeChild(tempLink);
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.warn('scatalog: Client-side navigation failed, falling back to page reload:', error);
+      // Fallback to traditional navigation if all else fails
+      window.location.href = spotifyUrl;
+    }
+  }
+
+  /**
    * Open artist page on Spotify, respecting the "open in new tab" preference
    */
   async openArtistPage(artistId) {
@@ -3108,7 +3173,9 @@ class SpotifyLabelExplorer {
       if (openInNewTab) {
         window.open(artistUrl, '_blank');
       } else {
-        window.location.href = artistUrl;
+        this.navigateToSpotifyUrl(artistUrl);
+        // Close the modal after navigation
+        this.closeModal();
       }
     } catch (error) {
       console.error('Failed to open artist page:', error);

@@ -773,7 +773,13 @@ class SpotifyLabelExplorer {
     // Modal content
     const content = document.createElement('div');
     content.className = 'modal-content';
-    content.innerHTML = '<div class="loading">Loading label catalog...</div>';
+    content.innerHTML = `
+      <div class="loading" id="loadingContent">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading label catalog...</div>
+        <div class="loading-subtext" id="loadingSubtext" style="display: none;"></div>
+      </div>
+    `;
     
     modal.appendChild(header);
     modal.appendChild(content);
@@ -811,7 +817,35 @@ class SpotifyLabelExplorer {
     
     // Load label catalog with comprehensive search
     try {
-      const results = await this.api.searchAllAlbumsByLabel(labelInfo.label);
+      console.log(`🚀 Starting search for label: "${labelInfo.label}"`);
+      
+      // Progress callback to update loading message
+      const updateProgress = (message, isLarge = false) => {
+        const loadingText = content.querySelector('.loading-text');
+        const loadingSubtext = content.querySelector('#loadingSubtext');
+        
+        if (loadingText) {
+          loadingText.innerHTML = message;
+        }
+        
+                 if (isLarge && loadingSubtext) {
+           loadingSubtext.style.display = 'block';
+           loadingSubtext.innerHTML = 'Large catalog - Comprehensive search in progress - Please be patient';
+           
+           // Add large catalog styling
+           const loadingContent = content.querySelector('#loadingContent');
+           if (loadingContent) {
+             loadingContent.classList.add('large-catalog-loading');
+           }
+         }
+      };
+      
+      const results = await this.api.searchAllAlbumsByLabel(labelInfo.label, updateProgress);
+      console.log(`🎯 Search completed for "${labelInfo.label}":`, {
+        totalItems: results.albums?.items?.length || 0,
+        reportedTotal: results.albums?.total || 0,
+        firstFew: results.albums?.items?.slice(0, 3)?.map(a => a.name) || []
+      });
       await this.displayResults(content, results, labelInfo.label, labelInfo);
     } catch (error) {
       content.innerHTML = `
@@ -1094,7 +1128,7 @@ class SpotifyLabelExplorer {
       
       if (searchData.albums && searchData.albums.total !== undefined) {
         const total = searchData.albums.total;
-        const result = total >= 100 ? '100+' : total;
+        const result = total; // Show actual count instead of "100+"
         
         // Cache the result using safe storage operation
         await this.safeStorageOperation(() => chrome.storage.local.set({
@@ -2690,7 +2724,7 @@ class SpotifyLabelExplorer {
           <div class="results-header-content">
             ${labelManagementHtml}
             <div class="results-summary">
-              <p>Found ${albums.length} release${albums.length !== 1 ? 's' : ''}</p>
+              <p>${this.generateResultsSummary()}</p>
             </div>
           </div>
           <div class="results-header-actions">

@@ -460,9 +460,9 @@ class SpotifyAPI {
       const limit = 50;
       let hasMore = true;
       let processedAlbums = 0;
-      const maxAlbumsToProcess = 100; // Limit to first 100 albums for performance
+      // Note: Album processing limit removed to show ALL albums as requested
 
-      while (hasMore && processedAlbums < maxAlbumsToProcess) {
+      while (hasMore) {
         const albumsResponse = await this.getArtistAlbums(artistId, limit, offset);
         
         if (!albumsResponse.items || albumsResponse.items.length === 0) {
@@ -471,7 +471,7 @@ class SpotifyAPI {
 
         // Process albums in batches of 10 to avoid overwhelming the API
         const batchSize = 10;
-        const albums = albumsResponse.items.slice(0, Math.min(albumsResponse.items.length, maxAlbumsToProcess - processedAlbums));
+        const albums = albumsResponse.items;
         
         for (let i = 0; i < albums.length; i += batchSize) {
           const batch = albums.slice(i, i + batchSize);
@@ -512,7 +512,7 @@ class SpotifyAPI {
         }
 
         processedAlbums += albums.length;
-        hasMore = albumsResponse.items.length === limit && processedAlbums < maxAlbumsToProcess;
+        hasMore = albumsResponse.items.length === limit;
         offset += limit;
       }
 
@@ -641,54 +641,242 @@ class SpotifyAPI {
   }
 
   /**
-   * Search for all albums by a label with pagination to ensure no results are missed
+   * Search for all albums by a label using intelligent strategy selection
    */
-  async searchAllAlbumsByLabel(labelName) {
-    const allAlbums = [];
-    let offset = 0;
-    const limit = 50; // Spotify's max per request
-    let hasMore = true;
+  async searchAllAlbumsByLabel(labelName, progressCallback = null) {
+    console.log(`🔍 Starting intelligent search for label: "${labelName}"`);
     
-    console.log(`Starting comprehensive search for label: ${labelName}`);
+    // Strategy 1: Always start with direct search
+    if (progressCallback) progressCallback('Searching label catalog...', false);
     
-    while (hasMore) {
-      try {
-        const results = await this.searchByLabel(labelName, limit, offset);
-        const albums = results.albums?.items || [];
-        
-        if (albums.length === 0) {
-          break; // No more results
+    const directResults = await this.searchDirectlyByLabel(labelName);
+    console.log(`📊 Direct search: Found ${directResults.length} albums`);
+    
+    // Check if we likely hit API limitations (90+ results suggests we hit the ~100 limit)
+    const hitLimitations = directResults.length >= 90;
+    
+    if (!hitLimitations) {
+      console.log(`✅ Small/medium label detected (${directResults.length} < 90). Using direct results only for speed.`);
+      return {
+        albums: {
+          items: directResults,
+          total: directResults.length
         }
-        
-        allAlbums.push(...albums);
-        
-        // Check if there are more results
-        const total = results.albums?.total || 0;
-        hasMore = (offset + limit) < total && albums.length === limit;
-        offset += limit;
-        
-        console.log(`Retrieved ${albums.length} albums (offset: ${offset - limit}, total found so far: ${allAlbums.length}, total available: ${total})`);
-        
-        // Small delay to respect rate limits
-        if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 150));
-        }
-        
-      } catch (error) {
-        console.error(`Failed to fetch albums at offset ${offset} for label ${labelName}:`, error);
-        break; // Stop on error to avoid infinite loop
-      }
+      };
     }
     
-    console.log(`Completed search for ${labelName}: found ${allAlbums.length} total albums`);
+    console.log(`🚨 Large label detected (${directResults.length} >= 90). Using advanced strategies to find more releases...`);
     
-    // Return in the same format as searchByLabel
+    // Notify about extended search
+    if (progressCallback) {
+      progressCallback(`Large catalog detected (${directResults.length} releases found).<br/>Searching comprehensively... This may take 30-60 seconds.`, true);
+    }
+    
+    // Strategy 2: Search with label variations (only for large labels)
+    if (progressCallback) progressCallback('Searching label variations...', true);
+    const variationResults = await this.searchByLabelVariations(labelName);
+    console.log(`📊 Variations: Found ${variationResults.length} additional albums`);
+    
+    // Strategy 3: Temporal search (only for large labels)
+    if (progressCallback) progressCallback('Searching by year ranges...', true);
+    const temporalResults = await this.searchByLabelAndYear(labelName);
+    console.log(`📊 Temporal: Found ${temporalResults.length} additional albums`);
+    
+    // Final processing
+    if (progressCallback) progressCallback('Combining and organizing results...', true);
+    
+    // Combine and deduplicate all results
+    const allAlbums = this.deduplicateAlbums([...directResults, ...variationResults, ...temporalResults]);
+    
+    console.log(`✅ Multi-strategy search completed for "${labelName}": found ${allAlbums.length} unique albums`);
+    console.log(`📈 Breakdown: Direct=${directResults.length}, Variations=${variationResults.length}, Temporal=${temporalResults.length}, Final=${allAlbums.length}`);
+    
     return {
       albums: {
         items: allAlbums,
         total: allAlbums.length
       }
     };
+  }
+
+  /**
+   * Original direct label search method
+   */
+  async searchDirectlyByLabel(labelName) {
+    const allAlbums = [];
+    let offset = 0;
+    const limit = 50;
+    let hasMore = true;
+    
+    console.log(`🎯 Direct search for: "${labelName}"`);
+    
+    while (hasMore) {
+      try {
+        const results = await this.searchByLabel(labelName, limit, offset);
+        const albums = results.albums?.items || [];
+        
+        if (albums.length === 0) break;
+        
+        allAlbums.push(...albums);
+        hasMore = albums.length === limit && offset + limit < (results.albums?.total || 0);
+        offset += limit;
+        
+        if (hasMore) {
+          await new Promise(resolve => setTimeout(resolve, 150));
+        }
+      } catch (error) {
+        console.warn(`Direct search failed at offset ${offset}:`, error);
+        break;
+      }
+    }
+    
+    return allAlbums;
+  }
+
+  /**
+   * Search using label name variations to catch more results
+   */
+  async searchByLabelVariations(labelName) {
+    const variations = this.generateLabelVariations(labelName);
+    const allAlbums = [];
+    
+    console.log(`🔄 Testing ${variations.length} label variations:`, variations);
+    
+    for (const variation of variations) {
+      try {
+        console.log(`🔍 Searching variation: "${variation}"`);
+        const results = await this.searchDirectlyByLabel(variation);
+        allAlbums.push(...results);
+        
+        // Small delay between variations
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } catch (error) {
+        console.warn(`Variation search failed for "${variation}":`, error);
+      }
+    }
+    
+    return allAlbums;
+  }
+
+  /**
+   * Search by label and year ranges to overcome API limits
+   */
+  async searchByLabelAndYear(labelName) {
+    const allAlbums = [];
+    const currentYear = new Date().getFullYear();
+    const startYear = 1950;
+    const yearRangeSize = 5; // Search in 5-year chunks
+    
+    console.log(`📅 Temporal search from ${startYear} to ${currentYear} in ${yearRangeSize}-year chunks`);
+    
+    for (let year = startYear; year <= currentYear; year += yearRangeSize) {
+      const endYear = Math.min(year + yearRangeSize - 1, currentYear);
+      
+      try {
+        console.log(`🔍 Searching ${year}-${endYear} for "${labelName}"`);
+        const yearResults = await this.searchByLabelAndYearRange(labelName, year, endYear);
+        allAlbums.push(...yearResults);
+        
+        // Delay between year ranges
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } catch (error) {
+        console.warn(`Year range search failed for ${year}-${endYear}:`, error);
+      }
+    }
+    
+    return allAlbums;
+  }
+
+  /**
+   * Search for a specific year range
+   */
+  async searchByLabelAndYearRange(labelName, startYear, endYear) {
+    const allAlbums = [];
+    let offset = 0;
+    const limit = 50;
+    let hasMore = true;
+    
+    while (hasMore && offset < 200) { // Limit to 200 per year range to avoid infinite loops
+      try {
+        const query = encodeURIComponent(`label:"${labelName}" year:${startYear}-${endYear}`);
+        const url = `${this.baseURL}/search?q=${query}&type=album&limit=${limit}&offset=${offset}`;
+        const data = await this.makeRequest(url);
+        
+        const albums = data.albums?.items || [];
+        if (albums.length === 0) break;
+        
+        allAlbums.push(...albums);
+        hasMore = albums.length === limit;
+        offset += limit;
+        
+        if (hasMore) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      } catch (error) {
+        console.warn(`Year range search failed for ${startYear}-${endYear} at offset ${offset}:`, error);
+        break;
+      }
+    }
+    
+    return allAlbums;
+  }
+
+  /**
+   * Generate label name variations
+   */
+  generateLabelVariations(labelName) {
+    const variations = new Set();
+    
+    // Original name
+    variations.add(labelName);
+    
+    // Common variations for major labels
+    const commonVariations = {
+      'Atlantic Records': ['Atlantic', 'Atlantic Recording Corporation', 'Atlantic Records LLC'],
+      'Warner Bros. Records': ['Warner Bros.', 'Warner Brothers Records', 'WBR'],
+      'Columbia Records': ['Columbia', 'CBS Records'],
+      'Capitol Records': ['Capitol', 'Capitol Music Group'],
+      'Universal Music Group': ['Universal', 'UMG'],
+      'Sony Music': ['Sony Music Entertainment', 'Sony'],
+      'EMI Records': ['EMI', 'EMI Music'],
+      'Interscope Records': ['Interscope', 'Interscope Geffen A&M'],
+      'RCA Records': ['RCA', 'RCA Victor'],
+      'Epic Records': ['Epic', 'Epic Records Group']
+    };
+    
+    if (commonVariations[labelName]) {
+      commonVariations[labelName].forEach(variant => variations.add(variant));
+    }
+    
+    // Generic transformations
+    if (labelName.includes('Records')) {
+      variations.add(labelName.replace(' Records', ''));
+      variations.add(labelName.replace('Records', ''));
+    }
+    
+    if (labelName.includes('Music')) {
+      variations.add(labelName.replace(' Music', ''));
+      variations.add(labelName.replace('Music', ''));
+    }
+    
+    // Remove the original to avoid duplicate searches
+    variations.delete(labelName);
+    
+    return Array.from(variations).slice(0, 5); // Limit to 5 variations to avoid too many API calls
+  }
+
+  /**
+   * Deduplicate albums by ID
+   */
+  deduplicateAlbums(albums) {
+    const seen = new Set();
+    return albums.filter(album => {
+      if (seen.has(album.id)) {
+        return false;
+      }
+      seen.add(album.id);
+      return true;
+    });
   }
 }
 

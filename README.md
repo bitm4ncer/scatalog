@@ -19,6 +19,8 @@ _Explore related artists and all their labels
 
 _Add related labels to your search
 
+![label card Screenshot.](./content/img/label-screenshot.png)
+
 _Sort and search catalogs
 
 _Save *scatalog* for later revision
@@ -50,6 +52,8 @@ _________________________________________________
 ### 3. Configure API Access
 1. Click the scatalog extension icon in Chrome's toolbar
 2. Paste your Client ID and Client Secret and "Save Credentials"
+
+![Setup Screenshot.](./content/img/setup-screenshot.png)
 
 
 ### 4. Start Exploring

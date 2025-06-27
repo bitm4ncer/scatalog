@@ -13,16 +13,11 @@
 
 ###  Features
 
-_Browse the entire Spotify catalog of any label
+- Browse entire catalogs of any label on Spotify
 
-_Explore related artists and all their labels
+- Explore related artists and their other labels and add them to your search
 
-_Add related labels to your search
-
-_Sort and search catalogs
-
-_Save search to local *scatalog* collection
-
+- Sort and search catalogs
 
 
 

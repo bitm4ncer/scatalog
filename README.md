@@ -7,10 +7,6 @@
 
 
 
-![Screenshot of the scatalog Interface](./content/img/main-screenshot.png)
-
-
-
 ###  Features
 
 - Browse entire catalogs of any label on Spotify
@@ -19,6 +15,7 @@
 
 - Sort and search catalogs
 
+![Screenshot of the scatalog Interface](./content/img/main-screenshot.png)
 
 
 _________________________________________________

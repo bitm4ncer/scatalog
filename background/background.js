@@ -71,7 +71,7 @@ class BackgroundManager {
     try {
       // Set default settings
       await chrome.storage.sync.set({
-        extensionVersion: '0.1.1',
+        extensionVersion: '0.1.2',
         installDate: Date.now(),
         firstRun: true
       });
@@ -91,12 +91,12 @@ class BackgroundManager {
    * Handle extension update
    */
   async handleUpdate(previousVersion) {
-    console.log(`Extension updated from ${previousVersion} to 0.1.1`);
+            console.log(`Extension updated from ${previousVersion} to 0.1.2`);
 
     try {
       // Update version in storage
       await chrome.storage.sync.set({
-        extensionVersion: '0.1.1',
+        extensionVersion: '0.1.2',
         lastUpdateDate: Date.now(),
         previousVersion: previousVersion
       });
@@ -352,9 +352,26 @@ chrome.runtime.onConnect.addListener((port) => {
 });
 
 // Periodic cleanup (every 24 hours)
-chrome.alarms.create('cleanup', { periodInMinutes: 24 * 60 });
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'cleanup') {
-    backgroundManager.cleanupOldData();
+// Check if alarms API is available before using it
+if (chrome.alarms) {
+  try {
+    chrome.alarms.create('cleanup', { periodInMinutes: 24 * 60 });
+    chrome.alarms.onAlarm.addListener((alarm) => {
+      if (alarm.name === 'cleanup') {
+        backgroundManager.cleanupOldData();
+      }
+    });
+  } catch (error) {
+    console.warn('Could not set up alarms - this is expected if alarms permission is not granted:', error);
+    // Fallback: Use setInterval for cleanup (less reliable but works)
+    setInterval(() => {
+      backgroundManager.cleanupOldData();
+    }, 24 * 60 * 60 * 1000); // 24 hours
   }
-}); 
+} else {
+  console.warn('Chrome alarms API not available, using fallback timer');
+  // Fallback: Use setInterval for cleanup
+  setInterval(() => {
+    backgroundManager.cleanupOldData();
+  }, 24 * 60 * 60 * 1000); // 24 hours
+} 

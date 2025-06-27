@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "scatalog",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Explore record label catalogs directly from Spotify's interface. Click on any label to discover their entire discography.",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "alarms"
   ],
   "host_permissions": [
     "https://open.spotify.com/*",

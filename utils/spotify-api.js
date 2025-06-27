@@ -13,6 +13,43 @@ class SpotifyAPI {
     this.isProcessingQueue = false;
     this.lastRequestTime = 0;
     this.minRequestInterval = 100; // 100ms between requests to respect rate limits
+    this.shutdownInitiated = false; // Track if shutdown was initiated
+  }
+
+  /**
+   * Check if the extension context is still valid
+   */
+  isExtensionContextValid() {
+    try {
+      // Try to access chrome.runtime which will throw if context is invalidated
+      if (chrome.runtime && chrome.runtime.id) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Safe wrapper for chrome.storage operations
+   */
+  async safeStorageOperation(operation) {
+    if (this.shutdownInitiated || !this.isExtensionContextValid()) {
+      return null;
+    }
+    
+    try {
+      return await operation();
+    } catch (error) {
+      if (error.message && (error.message.includes('Extension context invalidated') || 
+                           error.message.includes('Cannot access chrome'))) {
+        this.shutdownInitiated = true;
+        console.warn('spotify-api: Extension context invalidated, initiating shutdown');
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
@@ -113,15 +150,22 @@ class SpotifyAPI {
    * Track API call statistics with time-based tracking
    */
   async trackApiCall() {
+    if (this.shutdownInitiated) return;
+    
     try {
       const now = Date.now();
-      const result = await chrome.storage.local.get([
+      const result = await this.safeStorageOperation(() => chrome.storage.local.get([
         'apiCallsToday', 
         'lastResetDate',
         'apiCallsThisHour',
         'hourlyResetTime',
         'recentApiCalls'
-      ]);
+      ]));
+
+      if (!result || this.shutdownInitiated) {
+        // Context invalidated or shutdown initiated, skip tracking
+        return;
+      }
       
       const today = new Date().toDateString();
       const currentHour = new Date().getHours();
@@ -130,14 +174,14 @@ class SpotifyAPI {
       let apiCallsToday = result.apiCallsToday || 0;
       if (result.lastResetDate !== today) {
         apiCallsToday = 0;
-        await chrome.storage.local.set({ lastResetDate: today });
+        await this.safeStorageOperation(() => chrome.storage.local.set({ lastResetDate: today }));
       }
       
       // Reset hourly counter if it's a new hour
       let apiCallsThisHour = result.apiCallsThisHour || 0;
       if (!result.hourlyResetTime || now - result.hourlyResetTime > 3600000) { // 1 hour
         apiCallsThisHour = 0;
-        await chrome.storage.local.set({ hourlyResetTime: now });
+        await this.safeStorageOperation(() => chrome.storage.local.set({ hourlyResetTime: now }));
       }
       
       // Track recent calls for minute-based rate limiting (last 60 seconds)
@@ -150,11 +194,11 @@ class SpotifyAPI {
       apiCallsToday++;
       apiCallsThisHour++;
       
-      await chrome.storage.local.set({ 
+      await this.safeStorageOperation(() => chrome.storage.local.set({ 
         apiCallsToday,
         apiCallsThisHour,
         recentApiCalls
-      });
+      }));
     } catch (error) {
       console.error('Failed to track API call:', error);
     }
@@ -164,12 +208,18 @@ class SpotifyAPI {
    * Track cache hit
    */
   async trackCacheHit() {
+    if (this.shutdownInitiated) return;
+    
     try {
-      const result = await chrome.storage.local.get(['cacheHits']);
+      const result = await this.safeStorageOperation(() => chrome.storage.local.get(['cacheHits']));
+      if (!result || this.shutdownInitiated) return; // Context invalidated or shutdown
+      
       const cacheHits = (result.cacheHits || 0) + 1;
-      await chrome.storage.local.set({ cacheHits });
+      await this.safeStorageOperation(() => chrome.storage.local.set({ cacheHits }));
     } catch (error) {
-      console.error('Failed to track cache hit:', error);
+      if (!this.shutdownInitiated) {
+        console.error('Failed to track cache hit:', error);
+      }
     }
   }
 
@@ -177,18 +227,24 @@ class SpotifyAPI {
    * Track rate limit hit with retry-after information
    */
   async trackRateLimitHit(retryAfter = null) {
+    if (this.shutdownInitiated) return;
+    
     try {
       const now = Date.now();
-      const result = await chrome.storage.local.get(['rateLimitHits', 'lastRateLimitTime', 'rateLimitRetryAfter']);
+      const result = await this.safeStorageOperation(() => chrome.storage.local.get(['rateLimitHits', 'lastRateLimitTime', 'rateLimitRetryAfter']));
+      if (!result || this.shutdownInitiated) return; // Context invalidated or shutdown
+      
       const rateLimitHits = (result.rateLimitHits || 0) + 1;
       
-      await chrome.storage.local.set({ 
+      await this.safeStorageOperation(() => chrome.storage.local.set({ 
         rateLimitHits,
         lastRateLimitTime: now,
         rateLimitRetryAfter: retryAfter
-      });
+      }));
     } catch (error) {
-      console.error('Failed to track rate limit hit:', error);
+      if (!this.shutdownInitiated) {
+        console.error('Failed to track rate limit hit:', error);
+      }
     }
   }
 

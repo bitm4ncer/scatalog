@@ -1,4 +1,4 @@
-# scatalog 0.1.1
+# scatalog 0.1.2
 
 ## Chrome extension for label catalog exploration on Spotify
 
@@ -21,7 +21,7 @@ _Add related labels to your search
 
 _Sort and search catalogs
 
-_Save *scatalog* for later revision
+_Save search to local *scatalog* collection
 
 
 
@@ -34,12 +34,10 @@ _________________________________________________
 
 
 ### 1. Install the Extension
-1. Download this repository (Code → Download ZIP)
-2. Extract the ZIP file
-3. Open Chrome, Brave or any Chromium based browser
-4. Open Extension Manager or go to `chrome://extensions/` / `brave://extensions/`
+1. Download and extract this repository zip (Code → Download ZIP)
+4. Open Extension Manager of your Chrome, Brave or other Chromium based Broser (go to `chrome://extensions/` or `brave://extensions/`)
 4. Enable "Developer mode" (toggle in top right)
-5. Click "Load unpacked" and select the extracted folder
+5. Click "Load unpacked" and select the extracted folder *scatalog-main*
 
 ### 2. Get Spotify API Credentials
 1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and Log in
@@ -57,9 +55,11 @@ _________________________________________________
 ### 4. Start Exploring
 1. Go to [open.spotify.com](https://open.spotify.com)
 2. Click the scatlog button next to the track time
+![Screenshot of Spotify interface showing a track titled "Who Knows Where The Time Goes" by Participation Trophy, with playback controls and track details visible.](./content/img/button-screenshot.png)
+
+
 3. Explore that record label's entire catalog
 
-![Screenshot of Spotify interface showing a track titled "Who Knows Where The Time Goes" by Participation Trophy, with playback controls and track details visible.](./content/img/button-screenshot.png)
 
 
 

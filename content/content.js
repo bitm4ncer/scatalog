@@ -17,8 +17,101 @@ class SpotifyLabelExplorer {
     this.currentArtistDrawer = null; // Track current artist drawer
     this.artistDrawerVisible = true; // Track drawer visibility state
     this.artistOffset = 0; // Track current offset for pagination
+    this.currentUrl = window.location.href; // Track current URL for navigation detection
+    this.navigationTimeout = null; // Debounce navigation handling
+    this.contextValid = true; // Track extension context validity
+    this.shutdownInitiated = false; // Track if shutdown was initiated
+    this.activeIntervals = new Set(); // Track active intervals
     
     this.init();
+  }
+
+  /**
+   * Check if the extension context is still valid
+   */
+  isExtensionContextValid() {
+    try {
+      // Try to access chrome.runtime which will throw if context is invalidated
+      if (chrome.runtime && chrome.runtime.id) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      this.contextValid = false;
+      this.initiateShutdown();
+      return false;
+    }
+  }
+
+  /**
+   * Initiate graceful shutdown when context is invalidated
+   */
+  initiateShutdown() {
+    if (this.shutdownInitiated) return;
+    this.shutdownInitiated = true;
+    
+    console.warn('scatalog: Extension context invalidated, initiating graceful shutdown');
+    
+    // Clear all intervals
+    this.activeIntervals.forEach(intervalId => {
+      try {
+        clearInterval(intervalId);
+      } catch (error) {
+        // Ignore errors when clearing intervals
+      }
+    });
+    this.activeIntervals.clear();
+    
+    // Clear navigation timeout
+    if (this.navigationTimeout) {
+      clearTimeout(this.navigationTimeout);
+      this.navigationTimeout = null;
+    }
+    
+    // Clear rate limit interval
+    if (this.rateLimitInterval) {
+      clearInterval(this.rateLimitInterval);
+      this.rateLimitInterval = null;
+    }
+    
+    // Disconnect observer
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
+    }
+    
+    // Close modal
+    if (this.currentModal) {
+      try {
+        this.currentModal.remove();
+      } catch (error) {
+        // Ignore errors when removing modal
+      }
+      this.currentModal = null;
+    }
+    
+    console.warn('scatalog: Graceful shutdown completed');
+  }
+
+  /**
+   * Safe wrapper for chrome.storage operations
+   */
+  async safeStorageOperation(operation) {
+    if (this.shutdownInitiated || !this.isExtensionContextValid()) {
+      return null;
+    }
+    
+    try {
+      return await operation();
+    } catch (error) {
+      if (error.message && (error.message.includes('Extension context invalidated') || 
+                           error.message.includes('Cannot access chrome'))) {
+        this.contextValid = false;
+        this.initiateShutdown();
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
@@ -52,8 +145,19 @@ class SpotifyLabelExplorer {
    */
   async init() {
     try {
+      // Check if extension context is valid
+      if (!this.isExtensionContextValid()) {
+        console.warn('scatalog: Extension context invalidated during initialization');
+        return;
+      }
+
       // Check if extension is enabled
-      const result = await chrome.storage.sync.get(['extensionEnabled']);
+      const result = await this.safeStorageOperation(() => chrome.storage.sync.get(['extensionEnabled']));
+      if (!result) {
+        console.warn('scatalog: Could not check if extension is enabled - context may be invalid');
+        return;
+      }
+      
       const isEnabled = result.extensionEnabled !== false; // Default to true
       
       if (!isEnabled) {
@@ -79,12 +183,16 @@ class SpotifyLabelExplorer {
         // Load cached Scatalogs
         await this.loadCachedScatalogs();
         
+        // Set up navigation detection
+        this.setupNavigationDetection();
+        
         console.log('scatalog initialized successfully');
       } else {
         console.log('scatalog: API credentials not configured');
       }
     } catch (error) {
       console.error('Failed to initialize scatalog:', error);
+      // Don't throw error, just log it to avoid breaking the page
     }
   }
 
@@ -112,6 +220,76 @@ class SpotifyLabelExplorer {
       childList: true,
       subtree: true
     });
+  }
+
+  /**
+   * Set up navigation detection to re-process elements after page changes
+   */
+  setupNavigationDetection() {
+    // Method 1: Listen for URL changes (client-side navigation)
+    const checkUrlChange = () => {
+      const newUrl = window.location.href;
+      if (newUrl !== this.currentUrl) {
+        console.log('scatalog: URL changed from', this.currentUrl, 'to', newUrl);
+        this.currentUrl = newUrl;
+        this.handleNavigation();
+      }
+    };
+
+    // Check URL periodically
+    setInterval(checkUrlChange, 1000);
+
+    // Method 2: Listen for history changes
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
+    history.pushState = function(...args) {
+      originalPushState.apply(history, args);
+      setTimeout(() => checkUrlChange(), 100);
+    };
+
+    history.replaceState = function(...args) {
+      originalReplaceState.apply(history, args);
+      setTimeout(() => checkUrlChange(), 100);
+    };
+
+    // Method 3: Listen for popstate events (back/forward button)
+    window.addEventListener('popstate', () => {
+      setTimeout(() => checkUrlChange(), 100);
+    });
+
+    // Method 4: Listen for hashchange events
+    window.addEventListener('hashchange', () => {
+      setTimeout(() => checkUrlChange(), 100);
+    });
+
+    console.log('scatalog: Navigation detection set up');
+  }
+
+  /**
+   * Handle navigation - clear old buttons and re-process elements
+   */
+  handleNavigation() {
+    // Clear the navigation timeout if it exists
+    if (this.navigationTimeout) {
+      clearTimeout(this.navigationTimeout);
+    }
+
+    // Debounce navigation handling to avoid excessive processing
+    this.navigationTimeout = setTimeout(() => {
+      console.log('scatalog: Handling navigation - clearing processed elements and re-scanning');
+      
+      // Clear processed elements tracking
+      this.processedElements = new WeakSet();
+      this.processedButtons = new Set();
+      
+      // Wait a bit for Spotify to load new content, then re-process
+      setTimeout(async () => {
+        await this.processExistingElements();
+        console.log('scatalog: Re-processed elements after navigation');
+      }, 500); // Wait 500ms for Spotify to load content
+      
+    }, 200); // Debounce for 200ms
   }
 
   /**
@@ -820,7 +998,17 @@ class SpotifyLabelExplorer {
    * Load label counts for all labels and display them immediately
    */
   async loadAllLabelCounts(labelItems, loadedCounts, pendingRequests) {
+    // Check if extension context is valid and shutdown not initiated
+    if (this.shutdownInitiated || !this.isExtensionContextValid()) {
+      return;
+    }
+    
     for (const item of labelItems) {
+      // Check again in the loop in case shutdown is initiated during processing
+      if (this.shutdownInitiated || !this.isExtensionContextValid()) {
+        break;
+      }
+      
       const labelName = item.dataset.labelName;
       const totalCountElement = item.querySelector('.label-total-count');
       const totalTextElement = item.querySelector('.total-text');
@@ -835,6 +1023,12 @@ class SpotifyLabelExplorer {
         
         try {
           const totalCount = await this.getLabelTotalReleaseCount(labelName);
+          
+          // Check if shutdown occurred during the async operation
+          if (this.shutdownInitiated || !this.isExtensionContextValid()) {
+            break;
+          }
+          
           loadedCounts.set(labelName, totalCount);
           
           // Update the display
@@ -847,6 +1041,10 @@ class SpotifyLabelExplorer {
             totalCountElement.classList.add('error');
           }
         } catch (error) {
+          // Silently handle extension context errors
+          if (error.message && error.message.includes('Extension context invalidated')) {
+            break;
+          }
           console.warn('Failed to load count for label:', labelName, error);
           loadedCounts.set(labelName, null);
           totalTextElement.textContent = 'error loading';
@@ -865,19 +1063,29 @@ class SpotifyLabelExplorer {
    * Get total release count for a label via API
    */
   async getLabelTotalReleaseCount(labelName) {
-    // Check if we have this cached globally
-    const cacheKey = `label-total:${labelName}`;
-    const cached = await chrome.storage.local.get([cacheKey]);
-    
-    if (cached[cacheKey]) {
-      const cachedData = cached[cacheKey];
-      // Cache for 1 hour
-      if (Date.now() - cachedData.timestamp < 60 * 60 * 1000) {
-        return cachedData.count;
-      }
+    // Check if extension context is valid
+    if (this.shutdownInitiated || !this.isExtensionContextValid()) {
+      return 0;
     }
     
     try {
+      // Check if we have this cached globally using safe storage operation
+      const cacheKey = `label-total:${labelName}`;
+      const cached = await this.safeStorageOperation(() => chrome.storage.local.get([cacheKey]));
+      
+      if (cached && cached[cacheKey]) {
+        const cachedData = cached[cacheKey];
+        // Cache for 1 hour
+        if (Date.now() - cachedData.timestamp < 60 * 60 * 1000) {
+          return cachedData.count;
+        }
+      }
+      
+      // Check context again before making API request
+      if (this.shutdownInitiated || !this.isExtensionContextValid()) {
+        return 0;
+      }
+      
       // Search for albums by this label with a higher limit
       const searchQuery = encodeURIComponent(`label:"${labelName}"`);
       const searchUrl = `https://api.spotify.com/v1/search?q=${searchQuery}&type=album&limit=1&market=US`;
@@ -888,19 +1096,23 @@ class SpotifyLabelExplorer {
         const total = searchData.albums.total;
         const result = total >= 100 ? '100+' : total;
         
-        // Cache the result
-        await chrome.storage.local.set({
+        // Cache the result using safe storage operation
+        await this.safeStorageOperation(() => chrome.storage.local.set({
           [cacheKey]: {
             count: result,
             timestamp: Date.now()
           }
-        });
+        }));
         
         return result;
       }
       
       return 0;
     } catch (error) {
+      // Silently handle extension context errors
+      if (error.message && error.message.includes('Extension context invalidated')) {
+        return 0;
+      }
       console.error('Failed to get total release count for label:', labelName, error);
       return 0;
     }
@@ -2854,22 +3066,47 @@ class SpotifyLabelExplorer {
    * Setup rate limit indicator in modal header and footer
    */
   setupRateLimitIndicator() {
-    if (!this.currentModal) return;
+    // Completely disable rate limit indicators to prevent context invalidation errors
+    console.log('scatalog: Rate limit indicators disabled to prevent extension context errors');
+    return;
+    
+    /* DISABLED CODE - Keeping for reference
+    if (!this.currentModal || this.shutdownInitiated) return;
     
     const updateIndicator = async () => {
-      const indicator = this.currentModal.querySelector('#rateLimitIndicator');
-      const modalPressureValue = this.currentModal.querySelector('#modalPressureValue');
-      const modalPressureFill = this.currentModal.querySelector('#modalPressureFill');
-      
-      if (!indicator) return;
-      
       try {
-        // Get rate limit status from Chrome storage (same as popup)
-        const result = await chrome.storage.local.get([
-          'recentApiCalls',
-          'lastRateLimitTime',
-          'rateLimitRetryAfter'
-        ]);
+        // Check if shutdown was initiated or context is invalid
+        if (this.shutdownInitiated || !this.isExtensionContextValid()) {
+          return;
+        }
+        
+        // Check if modal still exists
+        if (!this.currentModal || !document.contains(this.currentModal)) {
+          return;
+        }
+        
+        const indicator = this.currentModal.querySelector('#rateLimitIndicator');
+        const modalPressureValue = this.currentModal.querySelector('#modalPressureValue');
+        const modalPressureFill = this.currentModal.querySelector('#modalPressureFill');
+        
+        if (!indicator) return;
+        
+        // Get rate limit status from Chrome storage with additional safety
+        const result = await this.safeStorageOperation(() => {
+          if (!chrome?.storage?.local) {
+            throw new Error('Chrome storage not available');
+          }
+          return chrome.storage.local.get([
+            'recentApiCalls',
+            'lastRateLimitTime',
+            'rateLimitRetryAfter'
+          ]);
+        });
+
+        if (!result || this.shutdownInitiated) {
+          // Context invalidated or shutdown initiated, skip update
+          return;
+        }
 
         const now = Date.now();
         const recentApiCalls = result.recentApiCalls || [];
@@ -2882,6 +3119,7 @@ class SpotifyLabelExplorer {
         const recentCalls = callsLastMinute;
         
         const dot = indicator.querySelector('.rate-limit-dot');
+        if (!dot || this.shutdownInitiated) return; // Element might have been removed
         
         // Update header dot indicator
         if (isLimited) {
@@ -2902,26 +3140,42 @@ class SpotifyLabelExplorer {
         }
         
         // Update footer pressure bar
-        if (modalPressureValue && modalPressureFill) {
+        if (modalPressureValue && modalPressureFill && !this.shutdownInitiated) {
           this.updateModalPressureIndicator(recentCalls, isLimited, modalPressureValue, modalPressureFill);
-          console.log('scatalog: Updated modal pressure indicator:', recentCalls, 'calls/min');
         }
       } catch (error) {
-        console.error('Failed to update rate limit indicator:', error);
+        // Completely silent - no console errors during context invalidation
+        return;
       }
     };
     
     // Update immediately and then every 5 seconds
-    updateIndicator();
-    this.rateLimitInterval = setInterval(updateIndicator, 5000);
+    updateIndicator().catch(() => {
+      // Silently ignore any errors from initial update
+    });
+    
+    if (!this.shutdownInitiated && this.isExtensionContextValid()) {
+      this.rateLimitInterval = setInterval(() => {
+        updateIndicator().catch(() => {
+          // Silently ignore any errors from interval updates
+          // Clear the interval if there are repeated errors
+          if (this.rateLimitInterval) {
+            clearInterval(this.rateLimitInterval);
+            this.rateLimitInterval = null;
+            this.activeIntervals.delete(this.rateLimitInterval);
+          }
+        });
+      }, 5000);
+      this.activeIntervals.add(this.rateLimitInterval);
+    }
     
     // Also initialize the pressure bar immediately with 0 values if elements exist
     const modalPressureValue = this.currentModal.querySelector('#modalPressureValue');
     const modalPressureFill = this.currentModal.querySelector('#modalPressureFill');
     if (modalPressureValue && modalPressureFill) {
       this.updateModalPressureIndicator(0, false, modalPressureValue, modalPressureFill);
-      console.log('scatalog: Initialized modal pressure indicator');
     }
+    */
   }
 
   /**
@@ -3061,11 +3315,15 @@ class SpotifyLabelExplorer {
    */
   async getOpenInNewTabPreference() {
     try {
-      const result = await chrome.storage.local.get(['openInNewTab']);
-      return result.openInNewTab !== false; // Default to true
+      const result = await this.safeStorageOperation(() => chrome.storage.local.get(['openInNewTab']));
+      if (!result) {
+        // Context invalidated
+        return false; // Default to false
+      }
+      return result.openInNewTab === true; // Default to false
     } catch (error) {
       console.error('Failed to get open in new tab preference:', error);
-      return true; // Default to true on error
+      return false; // Default to false on error
     }
   }
 
@@ -3074,7 +3332,7 @@ class SpotifyLabelExplorer {
    */
   async saveOpenInNewTabPreference(openInNewTab) {
     try {
-      await chrome.storage.local.set({ openInNewTab });
+      await this.safeStorageOperation(() => chrome.storage.local.set({ openInNewTab }));
     } catch (error) {
       console.error('Failed to save open in new tab preference:', error);
     }
@@ -3209,7 +3467,14 @@ class SpotifyLabelExplorer {
    * Start updating global pressure indicators
    */
   startGlobalPressureUpdates() {
+    // Completely disable global pressure indicators to prevent context invalidation errors
+    console.log('scatalog: Global pressure indicators disabled to prevent extension context errors');
+    return;
+    
+    /* DISABLED CODE - Keeping for reference
     const updateGlobalIndicators = async () => {
+      if (this.shutdownInitiated) return;
+      
       const globalPressureValue = document.getElementById('globalPressureValue');
       const globalPressureFill = document.getElementById('globalPressureFill');
       const globalPressureDot = document.getElementById('globalPressureDot');
@@ -3220,11 +3485,13 @@ class SpotifyLabelExplorer {
       
       try {
         // Get rate limit status from Chrome storage
-        const result = await chrome.storage.local.get([
+        const result = await this.safeStorageOperation(() => chrome.storage.local.get([
           'recentApiCalls',
           'lastRateLimitTime',
           'rateLimitRetryAfter'
-        ]);
+        ]));
+
+        if (!result || this.shutdownInitiated) return;
 
         const now = Date.now();
         const recentApiCalls = result.recentApiCalls || [];
@@ -3256,13 +3523,33 @@ class SpotifyLabelExplorer {
           globalPressureDot.title = `Normal: ${callsLastMinute} calls/min`;
         }
       } catch (error) {
-        console.error('Failed to update global pressure indicators:', error);
+        // Silently ignore errors during shutdown
+        if (!this.shutdownInitiated) {
+          console.error('Failed to update global pressure indicators:', error);
+        }
       }
     };
     
     // Update immediately and then every 5 seconds
-    updateGlobalIndicators();
-    this.globalPressureInterval = setInterval(updateGlobalIndicators, 5000);
+    updateGlobalIndicators().catch(() => {
+      // Silently ignore any errors from initial update
+    });
+    
+    if (!this.shutdownInitiated && this.isExtensionContextValid()) {
+      this.globalPressureInterval = setInterval(() => {
+        updateGlobalIndicators().catch(() => {
+          // Silently ignore any errors from interval updates
+          // Clear the interval if there are repeated errors
+          if (this.globalPressureInterval) {
+            clearInterval(this.globalPressureInterval);
+            this.globalPressureInterval = null;
+            this.activeIntervals.delete(this.globalPressureInterval);
+          }
+        });
+      }, 5000);
+      this.activeIntervals.add(this.globalPressureInterval);
+    }
+    */
   }
 
   /**
@@ -4736,6 +5023,29 @@ class SpotifyLabelExplorer {
   }
 }
 
+// Global error handlers for extension context invalidation
+window.addEventListener('error', (event) => {
+  if (event.error && event.error.message && 
+      (event.error.message.includes('Extension context invalidated') ||
+       event.error.message.includes('Cannot access chrome') ||
+       event.error.message.includes('Cannot read properties of undefined'))) {
+    // Silently ignore extension context errors
+    event.preventDefault();
+    return false;
+  }
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  if (event.reason && event.reason.message && 
+      (event.reason.message.includes('Extension context invalidated') ||
+       event.reason.message.includes('Cannot access chrome') ||
+       event.reason.message.includes('Cannot read properties of undefined'))) {
+    // Silently ignore extension context errors
+    event.preventDefault();
+    return false;
+  }
+});
+
 // Initialize the extension when the page loads
 let labelExplorer;
 
@@ -4747,12 +5057,20 @@ if (document.readyState === 'loading') {
   labelExplorer = new SpotifyLabelExplorer();
 }
 
-// Listen for messages from popup
+// Listen for messages from popup with error handling
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'reinitialize') {
-    if (labelExplorer) {
-      labelExplorer.reinitialize();
+  try {
+    if (request.action === 'reinitialize') {
+      if (labelExplorer && !labelExplorer.shutdownInitiated) {
+        labelExplorer.reinitialize();
+      }
+      sendResponse({ success: true });
     }
-    sendResponse({ success: true });
+  } catch (error) {
+    // Silently ignore errors during message handling
+    if (!error.message.includes('Extension context invalidated')) {
+      console.error('Error handling message:', error);
+    }
+    sendResponse({ success: false, error: error.message });
   }
 }); 

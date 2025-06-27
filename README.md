@@ -11,7 +11,7 @@
 
 - Browse entire catalogs of any label on Spotify
 
-- Explore related artists and their other labels and add them to your search
+- Explore related artists and their other labels. 
 
 - Sort and search catalogs
 

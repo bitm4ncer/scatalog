@@ -12,7 +12,7 @@
 
 - Browse entire catalog of any label on Spotify
 
-- Explore related artists and their other labels. 
+- Explore related artists and their other labels 
 
 - Sort and search catalogs
 

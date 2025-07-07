@@ -10,11 +10,11 @@
 
 ###  Features
 
-**Complete Label Catalogs** — *Browse every release from any record label right in Spotify.*
+**Complete Label Catalogs** — *Browse every release from any record label right in Spotify*
 
-**Artist & Label Discovery** — *See related artists and uncover all the other labels they’re on.*
+**Artist & Label Discovery** — *See related artists and uncover all the other labels they’re on*
 
-**Search & Sorting** — *Filter, sort, and search through catalogs.*
+**Search & Sorting** — *Filter, sort, and search through catalogs*
 
 ![Screenshot of the scatalog Interface](./content/img/main-screenshot.png)
 
@@ -62,16 +62,10 @@ _________________________________________________
 
 ## Browse complete label catalogs & discover new artists through label connections  
 
-Music discovery should be about exploration and connection, not strategic corporate limitations. 
-
-**Related Artists** recommendations prioritizes artists appearing on one or across multiple labels, taking release number and frequency into account.
-
 
 ![Screenshot of Spotify interface showing a track titled "Who Knows Where The Time Goes" by Participation Trophy, with playback controls and track details visible.](./content/img/demo.gif)
 
-
-
-**Independent labels are the driving force** behind genre innovation and musical diversity. Who operates outside the mainstream spotlight of curated playlists, algorithmic recommendations and major label contracts deserves to be found. Labels deserver their own spotify page.  
+**Related Artists recommendations** prioritize artists by their label involvement and release activity, factoring in both release count and frequency, not play counts.
 
 _________________________________________________
 
@@ -90,3 +84,8 @@ _________________________________________________
 - **Internet Explorer** 
 
 
+_________________________________________________
+
+### Labels deserver their own spotify page.  
+Music discovery should be about exploration and connection, not strategic restrictions. 
+**Independent labels are the driving force** behind genre innovation and musical diversity. Who operates outside the mainstream spotlight of curated playlists and algorithmic recommendations, based on rules given by the major labels, deserves to be found. 

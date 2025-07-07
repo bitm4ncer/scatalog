@@ -10,14 +10,11 @@
 
 ###  Features
 
-**Complete Label Catalogs**
-*Browse every release from any record label right in Spotify.*
+**Complete Label Catalogs** — *Browse every release from any record label right in Spotify.*
 
-**Artist & Label Discovery**
-*See related artists and uncover all the other labels they’re on.*
+**Artist & Label Discovery** — *See related artists and uncover all the other labels they’re on.*
 
-**Search & Sorting**
-*Filter, sort, and search through catalogs.*
+**Search & Sorting** — *Filter, sort, and search through catalogs.*
 
 ![Screenshot of the scatalog Interface](./content/img/main-screenshot.png)
 

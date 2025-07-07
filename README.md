@@ -63,7 +63,7 @@ _________________________________________________
 
 Music discovery should be about exploration and connection, not strategic corporate limitations. 
 
-##Browse complete label catalogs & discover new artists through label connections  
+## Browse complete label catalogs & discover new artists through label connections  
 
 
 **Related Artists** recommendations prioritizes artists appearing on one or across multiple labels, taking release number and frequency into account.

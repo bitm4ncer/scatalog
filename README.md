@@ -1,7 +1,7 @@
 # scatalog 
 ### v.0.1.2
 
-## A browser extension to explore record label catalogs on Spotify
+## Explore Label Archives on Spotify — Browser Extension
 
 
 
@@ -10,11 +10,14 @@
 
 ###  Features
 
-- Browse entire catalog of any label on Spotify
+**Complete Label Catalogs**
+*Browse every release from any record label right in Spotify.*
 
-- Explore related artists and their other labels 
+**Artist & Label Discovery**
+*See related artists and uncover all the other labels they’re on.*
 
-- Sort and search catalogs
+**Search & Sorting**
+*Filter, sort, and search through catalogs.*
 
 ![Screenshot of the scatalog Interface](./content/img/main-screenshot.png)
 
@@ -39,9 +42,9 @@ _________________________________________________
 3. Click "Create App" and fill in any app name and description
 4. Copy your **Client ID** and **Client Secret**
 
-### 3. Configure API Access
-1. Click the scatalog extension icon in Chrome's toolbar
-2. Paste your Client ID and Client Secret and "Save Credentials"
+### 3. Connect to API
+1. Click the scatalog extension icon in the toolbar of your browser
+2. Paste your **Client ID** and **Client Secret** and "Save Credentials"
 
 ![Setup Screenshot.](./content/img/setup-screenshot.png)
 

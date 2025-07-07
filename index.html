@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>scatalog - Browser Extension</title>
+    <meta name="description" content="Explore Label Archives on Spotify - A Chrome extension for browsing complete record label catalogs">
+    <meta name="keywords" content="spotify, chrome extension, music, labels, catalog, browser extension">
+    <meta name="author" content="bitmancer">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bitm4ncer.github.io/scatalog/">
+    <meta property="og:title" content="scatalog - Browser Extension">
+    <meta property="og:description" content="Explore Label Archives on Spotify - Browse complete record label catalogs">
+    <meta property="og:image" content="https://bitm4ncer.github.io/scatalog/content/img/main-screenshot.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://bitm4ncer.github.io/scatalog/">
+    <meta property="twitter:title" content="scatalog - Browser Extension">
+    <meta property="twitter:description" content="Explore Label Archives on Spotify - Browse complete record label catalogs">
+    <meta property="twitter:image" content="https://bitm4ncer.github.io/scatalog/content/img/main-screenshot.png">
+
+    <link rel="icon" type="image/svg+xml" href="icons/info_icon.svg">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/icon16.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="icons/icon48.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="icons/icon128.png">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --bg-primary: #121212;
+            --bg-secondary: #181818;
+            --bg-tertiary: #1a1a1a;
+            --green-primary: #1db954;
+            --green-hover: #1ed760;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --text-muted: #6a6a6a;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --border-hover: rgba(255, 255, 255, 0.2);
+            --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --shadow-heavy: 0 24px 80px rgba(0, 0, 0, 0.6);
+            --gradient-primary: linear-gradient(135deg, #121212 0%, #141414 100%);
+            --gradient-secondary: linear-gradient(135deg, #181818 0%, #1a1a1a 100%);
+            --gradient-green: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #080808;
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Interactive Canvas Background */
+        #vinyl-canvas {
+            position: fixed;
+            top: 80px;
+            left: 0;
+            width: 100vw;
+            height: calc(100vh - 80px);
+            z-index: -1;
+            filter: blur(12px);
+            opacity: 0.4;
+        }
+
+
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(18, 18, 18, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .header.scrolled {
+            background: rgba(18, 18, 18, 0.98);
+            box-shadow: var(--shadow-light);
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 1.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover {
+            color: var(--green-primary);
+            transform: scale(1.02);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .nav-link:hover {
+            color: var(--green-primary);
+            background: rgba(29, 185, 84, 0.1);
+        }
+
+        .coffee-btn {
+            background: var(--gradient-green);
+            color: black;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-light);
+        }
+
+        .coffee-btn:hover {
+            transform: translateY(-2px);
+     
+        }
+
+
+        /* Hero Section */
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 6rem 2rem 2rem;
+            background: transparent;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            z-index: 10;
+            position: relative;
+        }
+
+        .hero-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .hero-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+
+        .hero-version {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .hero-install-link {
+            margin-top: 1rem;
+        }
+
+        .install-instructions-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid transparent;
+        }
+
+        .install-instructions-link:hover {
+            color: var(--green-primary);
+            border-bottom-color: var(--green-primary);
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .cta-button {
+            background: var(--gradient-green);
+            color: black;
+            text-decoration: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-light);
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+        }
+
+        .cta-button.secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .cta-button.secondary:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow-light);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content-section {
+            background: rgba(24, 24, 24, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 3rem;
+            margin-bottom: 8rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-light);
+        }
+
+        .readme-content {
+            color: var(--text-primary);
+        }
+
+        .readme-section {
+            background: rgba(18, 18, 18, 0.8);
+            backdrop-filter: blur(15px);
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin-bottom: 8rem;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+            scroll-margin-top: 180px;
+        }
+
+        .readme-section:hover {
+            border-color: var(--border-hover);
+        }
+
+        .readme-section h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .readme-section h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--green-primary);
+            padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+
+
+        .readme-section h3 {
+            font-size: 1.5rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--green-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+
+
+        .readme-section p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .readme-section ul, .readme-section ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+            padding-left: 0;
+        }
+
+        .readme-section li {
+            margin-bottom: 0.3rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            list-style-type: disc;
+        }
+
+        .readme-section ol li {
+            list-style-type: decimal;
+        }
+
+        .readme-section a {
+            color: var(--green-primary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .readme-section a:hover {
+            color: var(--green-hover);
+            text-decoration: underline;
+        }
+
+        .readme-section img,
+        .readme-image {
+            max-width: 100%;
+            max-height: 535px;
+            height: auto;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            box-shadow: var(--shadow-light);
+            border: 1px solid var(--border-color);
+            display: block;
+        }
+
+        .readme-section code {
+            background: rgba(29, 185, 84, 0.1);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: var(--green-primary);
+            font-weight: 500;
+        }
+
+        .readme-section pre {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            margin: 1rem 0;
+        }
+
+        .readme-section hr {
+            border: none;
+            height: 1px;
+            background: var(--border-color);
+            margin: 2rem 0;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature-item {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            border-color: var(--green-primary);
+        }
+
+        .feature-title {
+            color: var(--green-primary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .install-steps {
+            counter-reset: step-counter;
+        }
+
+        .install-step {
+            counter-increment: step-counter;
+            position: relative;
+            padding-left: 3rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .install-step::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 2rem;
+            height: 2rem;
+            background: var(--green-primary);
+            color: black;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .install-step:last-child {
+            border-bottom: none;
+        }
+
+        .install-step h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .install-step ul {
+            margin-left: 1rem;
+        }
+
+        .install-step li {
+            margin-bottom: 0.3rem;
+            color: var(--text-secondary);
+        }
+
+        .requirements-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .requirements-column {
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .requirements-column.supported {
+            background: rgba(29, 185, 84, 0.05);
+            border: 1px solid rgba(29, 185, 84, 0.2);
+        }
+
+        .requirements-column.unsupported {
+            background: rgba(226, 33, 52, 0.05);
+            border: 1px solid rgba(226, 33, 52, 0.2);
+        }
+
+        .requirements-column h4 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .requirements-column.supported h4 {
+            color: var(--green-primary);
+        }
+
+        .requirements-column.unsupported h4 {
+            color: #e22134;
+        }
+
+        .requirements-column ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .requirements-column li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            line-height: 1.4;
+            list-style-type: none;
+        }
+
+        .requirements-column li:last-child {
+            border-bottom: none;
+        }
+
+        .requirements-column.supported li {
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .requirements-column.supported li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--green-primary);
+            font-weight: bold;
+        }
+
+        .requirements-column.unsupported li {
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .requirements-column.unsupported li::before {
+            content: '✗';
+            position: absolute;
+            left: 0;
+            color: #e22134;
+            font-weight: bold;
+        }
+
+        .spotify-api-section {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+
+        }
+
+        .spotify-api-section h4 {
+            color: var(--green-primary);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .spotify-api-section p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .spotify-api-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(29, 185, 84, 0.1);
+            color: var(--green-primary);
+            text-decoration: none;
+            border-radius: 50px;
+            border: 1px solid var(--green-primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .spotify-api-button:hover {
+            background: rgba(29, 185, 84, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+        }
+
+        .spotify-api-button svg {
+            flex-shrink: 0;
+        }
+
+
+
+        .showcase-section {
+            background: none;
+         
+          
+            position: relative;
+        }
+
+        .showcase-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .showcase-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+        }
+
+        .showcase-subline {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.6;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .showcase-subline strong {
+            color: var(--green-primary);
+            font-weight: 600;
+        }
+
+
+
+        .showcase-section h2 {
+            text-align: center;
+            color: var(--text-primary);
+            font-size: 1.8rem;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .showcase-section p {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .readme-section {
+                padding: 2rem;
+            }
+            
+            .requirements-grid {
+                grid-template-columns: 1fr;
+            }
+
+
+
+            .footer-statement {
+                padding: 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            .footer-statement h3 {
+                font-size: 1.5rem;
+            }
+
+            .footer-statement p {
+                font-size: 1rem;
+            }
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 3rem 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-statement {
+            text-align: center;
+            margin-bottom: 4rem;
+            padding: 1.5rem 11rem;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: none;
+        }
+
+        .footer-statement h3 {
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .footer-statement p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 0.5rem;
+            max-width: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .footer-statement p:last-child {
+            margin-bottom: 0;
+            color: var(--green-primary);
+            font-weight: 400;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .footer-links a:hover {
+            color: var(--green-primary);
+            background: rgba(29, 185, 84, 0.1);
+        }
+
+        .footer-coffee {
+            margin: 2rem 0;
+        }
+
+        .footer-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Loading States */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--green-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav {
+                padding: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.2rem;
+            }
+
+            .hero-cta {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .main-content {
+                padding: 2rem 1rem;
+            }
+
+            .content-section {
+                padding: 2rem;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+
+            .content-section {
+                padding: 1.5rem;
+            }
+
+            .readme-content h1 {
+                font-size: 2rem;
+            }
+
+            .readme-content h2 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-delay-1 { animation-delay: 0.1s; }
+        .fade-in-delay-2 { animation-delay: 0.2s; }
+        .fade-in-delay-3 { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <canvas id="vinyl-canvas"></canvas>
+    
+    <header class="header" id="header">
+        <nav class="nav">
+            <a href="#" class="logo">
+                <img src="icons/info_icon.svg" alt="scatalog icon" class="logo-icon" />
+                scatalog
+            </a>
+            <div class="nav-links">
+                <a href="#explore-label-archives-on-spotify" class="nav-link">Features</a>
+                <a href="#quick-start-guide" class="nav-link">Install</a>
+                <a href="#requirements" class="nav-link">Requirements</a>
+                <a href="https://github.com/bitm4ncer/scatalog" class="nav-link" target="_blank" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 50px; border: 1px solid var(--border-color); transition: all 0.3s ease;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-icon fade-in">
+                <img src="icons/info_icon.svg" alt="scatalog icon" />
+            </div>
+            <h1 class="hero-title fade-in fade-in-delay-1">scatalog</h1>
+            <div class="hero-version fade-in fade-in-delay-2" id="hero-version">Browser Extension v0.1.2</div>
+            <p class="hero-subtitle fade-in fade-in-delay-3">Explore Label Archives on Spotify</p>
+            <div class="hero-cta fade-in fade-in-delay-3">
+                <a href="https://github.com/bitm4ncer/scatalog/archive/refs/heads/main.zip" class="cta-button" download>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
+                        <path d="M12 2C13.1 2 14 2.9 14 4V11L16.5 8.5C16.9 8.1 17.5 8.1 17.9 8.5C18.3 8.9 18.3 9.5 17.9 9.9L12.7 15.1C12.3 15.5 11.7 15.5 11.3 15.1L6.1 9.9C5.7 9.5 5.7 8.9 6.1 8.5C6.5 8.1 7.1 8.1 7.5 8.5L10 11V4C10 2.9 10.9 2 12 2ZM4 18V20H20V18C20 17.4 19.6 17 19 17C18.4 17 18 17.4 18 18V19H6V18C6 17.4 5.6 17 5 17C4.4 17 4 17.4 4 18Z"/>
+                    </svg>
+                    Download Extension
+                </a>
+                <a href="https://github.com/bitm4ncer/scatalog" class="cta-button secondary" target="_blank">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    View on GitHub
+                </a>
+            </div>
+            <div class="hero-install-link fade-in fade-in-delay-3">
+                <a href="#quick-start-guide" class="install-instructions-link">Install Instructions</a>
+            </div>
+        </div>
+    </section>
+
+    <main class="main-content">
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading README content...</p>
+        </div>
+        <div class="readme-content" id="readme-content" style="display: none;">
+            <!-- README content will be loaded here -->
+        </div>
+    </main>
+
+        <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-statement">
+                <h3>Labels deserve their own Spotify page</h3>
+                <p>Music discovery should be about exploration and connection — not strategic platform restrictions.</p>
+                <p>The current model of commercially curated playlists and biased algorithms actively prohibits indie labels and niche projects from being discovered by their audience.</p>
+                <p>Independent labels are the driving force behind genre innovation and musical diversity. They deserve to be found.</p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/bitm4ncer/scatalog" target="_blank">GitHub</a>
+                <a href="https://github.com/bitm4ncer/scatalog/issues" target="_blank">Issues</a>
+                <a href="https://developer.spotify.com/terms" target="_blank">Spotify API Terms</a>
+            </div>
+            <div class="footer-coffee">
+                <a href="https://buymeacoffee.com/bitmancer" class="coffee-btn" target="_blank">
+                    🖤 Buy me a coffee
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Header scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                
+                // Skip empty anchors
+                if (href === '#') return;
+                
+                console.log('Attempting to scroll to:', href);
+                const target = document.querySelector(href);
+                if (target) {
+                    console.log('Found target:', target);
+                    // Calculate offset: navigation height (80px) + extra padding (100px) = 180px
+                    const offset = 180;
+                    const elementPosition = target.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    console.error('Target not found for anchor:', href);
+                    // List all available anchors for debugging
+                    const availableAnchors = document.querySelectorAll('[id]');
+                    console.log('Available anchors:', Array.from(availableAnchors).map(el => '#' + el.id));
+                }
+            });
+        });
+
+        // Load README content
+        async function loadReadmeContent() {
+            try {
+                const response = await fetch('README.md');
+                const text = await response.text();
+                
+                console.log('Original README content:', text.substring(0, 500));
+                
+                // Convert README markdown to HTML
+                const htmlContent = convertMarkdownToHtml(text);
+                
+                console.log('Converted HTML content:', htmlContent.substring(0, 1000));
+                
+                // Hide loading and show content
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('readme-content').innerHTML = htmlContent;
+                document.getElementById('readme-content').style.display = 'block';
+                
+                console.log('Content loaded, adding anchor IDs...');
+                
+                // Add anchor IDs for navigation (with small delay to ensure DOM is ready)
+                setTimeout(() => {
+                    addAnchorIds();
+                }, 100);
+                
+                // Update version in hero section
+                updateHeroVersion(text);
+                
+            } catch (error) {
+                console.error('Error loading README:', error);
+                document.getElementById('loading').innerHTML = '<p>Error loading README content. Please visit the <a href="https://github.com/bitm4ncer/scatalog" target="_blank">GitHub repository</a> for more information.</p>';
+                // Try to get version from manifest as fallback
+                loadVersionFromManifest();
+            }
+        }
+
+        // Fallback: Load version from manifest.json
+        async function loadVersionFromManifest() {
+            try {
+                const response = await fetch('manifest.json');
+                const manifest = await response.json();
+                if (manifest.version) {
+                    document.getElementById('hero-version').textContent = `Browser Extension v${manifest.version}`;
+                    console.log('Version loaded from manifest:', manifest.version);
+                }
+            } catch (error) {
+                console.error('Error loading manifest:', error);
+            }
+        }
+
+        // Extract version from README and update hero version
+        function updateHeroVersion(readmeText) {
+            console.log('Searching for version in README text...');
+            // Try multiple patterns to find version
+            const patterns = [
+                /Browser Extension v\.(\d+\.\d+\.\d+)/,
+                /v\.(\d+\.\d+\.\d+)/,
+                /v(\d+\.\d+\.\d+)/,
+                /(\d+\.\d+\.\d+)/
+            ];
+            
+            for (const pattern of patterns) {
+                const versionMatch = readmeText.match(pattern);
+                if (versionMatch) {
+                    const version = versionMatch[1];
+                    console.log('Found version:', version);
+                    document.getElementById('hero-version').textContent = `Browser Extension v${version}`;
+                    return;
+                }
+            }
+            
+            // Fallback if no version found
+            console.log('No version found, using fallback');
+            document.getElementById('hero-version').textContent = 'Browser Extension v0.1.2';
+        }
+
+        // Enhanced markdown to HTML converter with flexible structure-based sections
+        function convertMarkdownToHtml(markdown) {
+            // NEW FLEXIBLE SYSTEM:
+            // - Uses divider lines (____) to split sections instead of specific text
+            // - Detects section types by markdown structure patterns
+            // - No longer dependent on specific headlines or text content
+            // - Automatically adapts when README content changes
+            
+            console.log('Converting markdown to HTML. Total length:', markdown.length);
+            const rawSections = markdown.split(/^_{5,}$/gm);
+            console.log('Split into sections:', rawSections.length);
+            
+            let html = '';
+            let processedSections = new Set(); // Track processed sections to avoid duplication
+            
+            rawSections.forEach((rawSection, index) => {
+                console.log(`\n--- SECTION ${index} ---`);
+                console.log('Raw section preview:', rawSection.substring(0, 200));
+                
+                const trimmedSection = rawSection.trim();
+                if (!trimmedSection) {
+                    console.log('Section is empty, skipping');
+                    return;
+                }
+                
+                // Process each section based on its content
+                if (index === 0) {
+                    // Section 0 contains header + features - extract only features part
+                    console.log('Processing header section (index 0) - extracting features part');
+                    
+                    const contentStart = trimmedSection.indexOf('## Explore Label Archives on Spotify');
+                    if (contentStart !== -1) {
+                        const featuresContent = trimmedSection.substring(contentStart).trim();
+                        console.log('Extracted features content preview:', featuresContent.substring(0, 200));
+                        
+                        if (featuresContent && !processedSections.has('features')) {
+                            console.log('Processing features content with length:', featuresContent.length);
+                            const processedHTML = processSection(featuresContent);
+                            html += processedHTML;
+                            processedSections.add('features');
+                            console.log('Features section processed. Output length:', processedHTML.length);
+                        }
+                    } else {
+                        console.log('No features content found in section 0');
+                    }
+                } else {
+                    // Process other sections normally
+                    console.log('Processing section with length:', trimmedSection.length);
+                    
+                    // Skip if this section has already been processed
+                    const sectionType = detectSectionType(trimmedSection);
+                    if (processedSections.has(sectionType)) {
+                        console.log(`Section type ${sectionType} already processed, skipping`);
+                        return;
+                    }
+                    
+                    const processedHTML = processSection(trimmedSection);
+                    if (processedHTML && processedHTML.trim()) {
+                        html += processedHTML;
+                        processedSections.add(sectionType);
+                        console.log('Section processed. Output length:', processedHTML.length);
+                    } else {
+                        console.log('Section processed but returned empty content');
+                    }
+                }
+            });
+            
+            console.log('Final HTML length:', html.length);
+            console.log('Processed sections:', Array.from(processedSections));
+            return html;
+        }
+
+        function processSection(content) {
+            console.log('\n=== PROCESSING SECTION ===');
+            console.log('Content preview:', content.substring(0, 300));
+            
+            // Skip the "Labels deserve their own Spotify page" section - it's already in the footer
+            if (content.includes('Labels deserve their own Spotify page')) {
+                console.log('Skipping "Labels deserve their own Spotify page" section');
+                return ''; // Skip this section entirely
+            }
+            
+            // Detect section type based on markdown structure
+            const sectionType = detectSectionType(content);
+            console.log('Processing section type:', sectionType);
+            let sectionClass = 'readme-section';
+            
+            // Add type-specific classes
+            if (sectionType === 'features') {
+                sectionClass += ' features-section';
+            } else if (sectionType === 'install') {
+                sectionClass += ' install-section';
+            } else if (sectionType === 'showcase') {
+                sectionClass += ' showcase-section';
+            } else if (sectionType === 'requirements') {
+                sectionClass += ' requirements-section';
+            }
+            
+            let processedContent = processMarkdown(content);
+            
+            // Apply type-specific processing
+            if (sectionType === 'features') {
+                processedContent = processFeatures(processedContent);
+            } else if (sectionType === 'install') {
+                processedContent = processInstallSteps(processedContent);
+            } else if (sectionType === 'showcase') {
+                processedContent = processShowcase(processedContent);
+            } else if (sectionType === 'requirements') {
+                processedContent = processRequirements(processedContent);
+            }
+            
+            return `<div class="${sectionClass}">
+                ${processedContent}
+            </div>`;
+        }
+
+        function detectSectionType(content) {
+            // Detect based on markdown structure patterns
+            console.log('Detecting section type for content preview:', content.substring(0, 300));
+            
+            // Features: Must have explicit "Features" header AND the bold/italic pattern
+            const hasFeatureHeader = content.includes('### Features') || content.includes('###  Features');
+            const featuresPatternMarkdown = /\*\*.*?\*\* — \*.*?\*/;
+            const featuresPatternHTML = /<strong>.*?<\/strong> — <em>.*?<\/em>/;
+            const hasFeaturePattern = content.match(featuresPatternMarkdown) || content.match(featuresPatternHTML);
+            
+            if (hasFeatureHeader && hasFeaturePattern) {
+                console.log('Detected features section (header:', hasFeatureHeader, 'pattern:', !!hasFeaturePattern, ')');
+                return 'features';
+            }
+            
+            // Install: Contains numbered subsections (### 1., ### 2., etc.)
+            if (content.match(/### \d+\./)) {
+                console.log('Detected install section');
+                return 'install';
+            }
+            
+            // Showcase: Contains images (especially .gif)
+            if (content.match(/!\[.*?\]\(.*?\.(gif|png|jpg|jpeg)\)/)) {
+                console.log('Detected showcase section');
+                return 'showcase';
+            }
+            
+            // Requirements: Contains browser lists with checkmarks/X marks
+            if (content.includes('✅') && content.includes('❌')) {
+                console.log('Detected requirements section');
+                return 'requirements';
+            }
+            
+            // Default to general section
+            console.log('Detected general section (no specific pattern matched)');
+            return 'general';
+        }
+
+
+
+        function processMarkdown(content) {
+            // First, process images with a dedicated function
+            let processedContent = processImages(content);
+            
+            // Then handle other markdown elements
+            processedContent = processedContent
+                // Headers
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                // Bold and italic (but avoid processing inside image tags)
+                .replace(/\*\*((?!<img).*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*((?!<img).*?)\*/g, '<em>$1</em>')
+                // Links (but avoid processing image tags)
+                .replace(/\[([^\]]+)\]\(([^)]+)\)(?![^<]*<\/img>)/g, '<a href="$2" target="_blank">$1</a>')
+                // Code blocks
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                // Horizontal rules
+                .replace(/^_+$/gm, '<hr>');
+
+            // Process lists properly
+            processedContent = processLists(processedContent);
+            
+            // Handle line breaks and paragraphs (but preserve img tags)
+            processedContent = processedContent
+                .replace(/\n/g, '<br>')
+                .replace(/<br><br>/g, '</p><p>')
+                .replace(/^(?!<[h|u|o|i])/gm, '<p>')
+                .replace(/$(?!<\/[h|u|o|i])/gm, '</p>')
+                .replace(/<p><\/p>/g, '')
+                .replace(/<p>(<h[1-6]>)/g, '$1')
+                .replace(/(<\/h[1-6]>)<\/p>/g, '$1')
+                .replace(/<p>(<ul>)/g, '$1')
+                .replace(/(<\/ul>)<\/p>/g, '$1')
+                .replace(/<p>(<ol>)/g, '$1')
+                .replace(/(<\/ol>)<\/p>/g, '$1')
+                .replace(/<p>(<hr>)/g, '$1')
+                .replace(/(<hr>)<\/p>/g, '$1')
+                .replace(/<p>(<img[^>]*\/>)<\/p>/g, '$1')
+                .replace(/<p>(<img)/g, '$1')
+                .replace(/(\/>)<\/p>/g, '$1')
+                .replace(/<br>/g, '');
+                
+            return processedContent;
+        }
+        
+        function processImages(content) {
+            // Handle markdown images and convert them to HTML
+            // First handle relative paths with ./
+            let result = content.replace(/!\[([^\]]*)\]\(\.\/([^)]+)\)/g, function(match, alt, src) {
+                console.log('Processing relative image:', alt, 'src:', src);
+                return `<img src="${src}" alt="${alt}" class="readme-image" />`;
+            });
+            
+            // Then handle any remaining image patterns
+            result = result.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, function(match, alt, src) {
+                // Skip if already processed as an img tag
+                if (src.includes('<img')) return match;
+                console.log('Processing absolute image:', alt, 'src:', src);
+                return `<img src="${src}" alt="${alt}" class="readme-image" />`;
+            });
+            
+            return result;
+        }
+        
+        function processLists(content) {
+            // Split content into lines for better list processing
+            const lines = content.split('\n');
+            const processedLines = [];
+            let inList = false;
+            let listItems = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                if (line.startsWith('- ')) {
+                    // This is a list item
+                    if (!inList) {
+                        inList = true;
+                        listItems = [];
+                    }
+                    listItems.push(`<li>${line.substring(2)}</li>`);
+                } else if (line.match(/^\d+\. /)) {
+                    // This is a numbered list item
+                    if (!inList) {
+                        inList = true;
+                        listItems = [];
+                    }
+                    listItems.push(`<li>${line.replace(/^\d+\. /, '')}</li>`);
+                } else {
+                    // Not a list item
+                    if (inList) {
+                        // End the current list
+                        processedLines.push(`<ul>${listItems.join('')}</ul>`);
+                        inList = false;
+                        listItems = [];
+                    }
+                    if (line) {
+                        processedLines.push(line);
+                    }
+                }
+            }
+            
+            // Handle case where content ends with a list
+            if (inList) {
+                processedLines.push(`<ul>${listItems.join('')}</ul>`);
+            }
+            
+            return processedLines.join('\n');
+        }
+
+
+
+        function processShowcase(content) {
+            // Extract the title from the h2 tag
+            const titleMatch = content.match(/<h2>(.*?)<\/h2>/);
+            const title = titleMatch ? titleMatch[1] : 'Showcase';
+            
+            // Extract the image
+            const imageMatch = content.match(/<img[^>]*src="([^"]*)"[^>]*>/);
+            const imageSrc = imageMatch ? imageMatch[1] : '';
+            
+            // Extract the subline text that follows the image
+            const sublineMatch = content.match(/<strong>Related Artists recommendations<\/strong>[^]*?not play counts\./);
+            const subline = sublineMatch ? sublineMatch[0] : '';
+            
+            if (imageSrc) {
+                return `<h2>${title}</h2>
+                    <div class="showcase-container">
+                        <img src="${imageSrc}" alt="${title}" />
+                        ${subline ? `<div class="showcase-subline">${subline}</div>` : ''}
+                    </div>`;
+            }
+            
+            // Fallback to original content if no image found
+            return content;
+        }
+
+        function processFeatures(content) {
+            // Transform feature items into grid layout
+            console.log('Processing features section. Content:', content);
+            
+            // Check if grid already exists to avoid duplication
+            if (content.includes('features-grid')) {
+                console.log('Features grid already exists, skipping processing');
+                return content;
+            }
+            
+            // Check for both markdown and HTML patterns
+            const featurePatternMarkdown = /\*\*(.*?)\*\* — \*(.*?)\*/g;
+            const featurePatternHTML = /<strong>(.*?)<\/strong> — <em>(.*?)<\/em>/g;
+            
+            const features = [];
+            let match;
+            
+            // Try markdown pattern first
+            while ((match = featurePatternMarkdown.exec(content)) !== null) {
+                features.push({
+                    title: match[1],
+                    description: match[2]
+                });
+            }
+            
+            // If no markdown features found, try HTML pattern
+            if (features.length === 0) {
+                while ((match = featurePatternHTML.exec(content)) !== null) {
+                    features.push({
+                        title: match[1],
+                        description: match[2]
+                    });
+                }
+            }
+            
+            console.log('Found features:', features.length);
+            
+            if (features.length > 0) {
+                const featuresGrid = `<div class="features-grid">
+                    ${features.map(feature => `
+                        <div class="feature-item">
+                            <div class="feature-title">${feature.title}</div>
+                            <div class="feature-description">${feature.description}</div>
+                        </div>
+                    `).join('')}
+                </div>`;
+                
+                console.log('Content before replacement:', content.substring(0, 500));
+                
+                // More aggressive approach: remove ALL ULs and LIs, then add grid
+                let processedContent = content;
+                
+                // Remove all UL tags and their content
+                processedContent = processedContent.replace(/<ul[^>]*>[\s\S]*?<\/ul>/g, '');
+                
+                // Remove any remaining LI tags
+                processedContent = processedContent.replace(/<li[^>]*>[\s\S]*?<\/li>/g, '');
+                
+                // Clean up extra whitespace and breaks
+                processedContent = processedContent.replace(/\s+/g, ' ').trim();
+                
+                // Find where to insert the grid (after Features header)
+                const headerMatch = processedContent.match(/<h3[^>]*>\s*Features\s*<\/h3>/i);
+                if (headerMatch) {
+                    processedContent = processedContent.replace(headerMatch[0], `${headerMatch[0]}${featuresGrid}`);
+                    console.log('Features grid inserted after header');
+                } else {
+                    // If no header found, just append the grid
+                    processedContent += featuresGrid;
+                    console.log('Features grid appended to end');
+                }
+                
+                console.log('Final content preview:', processedContent.substring(0, 300));
+                return processedContent;
+            }
+            
+            return content;
+        }
+
+        function processInstallSteps(content) {
+            // Find all h3 headers that are install steps
+            const stepPattern = /<h3>(\d+\.\s.*?)<\/h3>(.*?)(?=<h3>|<br><br>|$)/gs;
+            const steps = [];
+            let match;
+            
+            while ((match = stepPattern.exec(content)) !== null) {
+                const stepTitle = match[1].replace(/^\d+\.\s/, '');
+                const stepContent = match[2].trim();
+                steps.push({
+                    title: stepTitle,
+                    content: stepContent
+                });
+            }
+            
+            if (steps.length > 0) {
+                const installSteps = `<div class="install-steps">
+                    ${steps.map(step => `
+                        <div class="install-step">
+                            <h4>${step.title}</h4>
+                            ${step.content}
+                        </div>
+                    `).join('')}
+                </div>`;
+                
+                // Remove the original step headers and content
+                content = content.replace(stepPattern, '');
+                content += installSteps;
+            }
+            
+            return content;
+        }
+
+        function processRequirements(content) {
+            // Transform requirements into grid layout using flexible patterns
+            // Look for sections with checkmarks and X marks
+            console.log('Processing requirements section. Raw content:', content);
+            
+            // Look for both h2 and h3 titles
+            const mainTitle = content.match(/<h[23]>(.*?)<\/h[23]>/);
+            let processedContent = content;
+            
+            // Remove the main title from processing
+            if (mainTitle) {
+                processedContent = processedContent.replace(/<h[23]>.*?<\/h[23]>/, '');
+            }
+            
+            // Extract supported and unsupported browser sections
+            // More flexible patterns to handle HTML and various whitespace
+            const supportedPattern = /✅[^❌]*?(?=❌|$)/s;
+            const unsupportedPattern = /❌[^✅]*?(?=✅|$)/s;
+            
+            const supportedMatch = supportedPattern.exec(processedContent);
+            const unsupportedMatch = unsupportedPattern.exec(processedContent);
+            
+            console.log('Processed content:', processedContent);
+            console.log('Supported match:', supportedMatch ? supportedMatch[0] : 'null');
+            console.log('Unsupported match:', unsupportedMatch ? unsupportedMatch[0] : 'null');
+            
+            if (supportedMatch && unsupportedMatch) {
+                let supportedText = supportedMatch[0];
+                let unsupportedText = unsupportedMatch[0];
+                
+                // Extract list items from supported section
+                const supportedItems = supportedText
+                    .replace(/✅.*?(?=<ul>|$)/s, '') // Remove everything before list
+                    .match(/<li>(.*?)<\/li>/g) || [];
+                
+                const unsupportedItems = unsupportedText
+                    .replace(/❌.*?(?=<ul>|$)/s, '') // Remove everything before list
+                    .match(/<li>(.*?)<\/li>/g) || [];
+                
+                console.log('Supported items found:', supportedItems.length);
+                console.log('Unsupported items found:', unsupportedItems.length);
+                
+                // If no <li> tags found, try to extract from raw markdown
+                let finalSupportedItems = supportedItems.join('');
+                let finalUnsupportedItems = unsupportedItems.join('');
+                
+                if (supportedItems.length === 0) {
+                    const rawSupportedItems = supportedText
+                        .split(/\n|<br>/)
+                        .map(line => line.trim())
+                        .filter(line => line && line.startsWith('- '))
+                        .map(line => `<li>${line.substring(2)}</li>`)
+                        .join('');
+                    finalSupportedItems = rawSupportedItems;
+                }
+                
+                if (unsupportedItems.length === 0) {
+                    const rawUnsupportedItems = unsupportedText
+                        .split(/\n|<br>/)
+                        .map(line => line.trim())
+                        .filter(line => line && line.startsWith('- '))
+                        .map(line => `<li>${line.substring(2)}</li>`)
+                        .join('');
+                    finalUnsupportedItems = rawUnsupportedItems;
+                }
+                
+                console.log('Final supported items:', finalSupportedItems);
+                console.log('Final unsupported items:', finalUnsupportedItems);
+                
+                // Make sure we have the title with proper structure
+                const titleTag = mainTitle ? mainTitle[0] : '<h3>Requirements</h3>';
+                console.log('Requirements title tag:', titleTag);
+                
+                // Check if we have items to display
+                if (!finalSupportedItems || !finalUnsupportedItems) {
+                    console.log('Warning: Missing browser list items');
+                    return content; // Return original content if items are missing
+                }
+                
+                const requirementsGrid = `${titleTag}
+                <div class="requirements-grid">
+                    <div class="requirements-column supported">
+                        <h4>✅ Supported Browsers</h4>
+                        <ul>${finalSupportedItems}</ul>
+                    </div>
+                    <div class="requirements-column unsupported">
+                        <h4>❌ Unsupported Browsers</h4>
+                        <ul>${finalUnsupportedItems}</ul>
+                    </div>
+                </div>
+                <div class="spotify-api-section">
+                    <h4>Spotify API Key</h4>
+                    <p>Connect your Spotify account to generate a free API key for the extension.</p>
+                    <a href="https://developer.spotify.com/dashboard" class="spotify-api-button" target="_blank">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
+                        </svg>
+                        Connect Spotify Account
+                    </a>
+                </div>`;
+                
+                return requirementsGrid;
+            }
+            
+            // Fallback to original content if patterns don't match
+            console.log('No matches found, returning original content');
+            return content;
+        }
+        
+        function processBrowserList(content) {
+            // Remove extra line breaks and clean up the content
+            const listItems = content
+                .replace(/<br>/g, '\n')
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line && line.startsWith('- '))
+                .map(line => `<li>${line.replace(/^- /, '')}</li>`)
+                .join('');
+            
+            return listItems ? `<ul>${listItems}</ul>` : '';
+        }
+
+        // Add anchor IDs for navigation - now fully dynamic
+        function addAnchorIds() {
+            const headers = document.querySelectorAll('#readme-content h2, #readme-content h3');
+            console.log('Found headers for anchor IDs:', headers.length);
+            
+            headers.forEach((header, index) => {
+                const originalText = header.textContent.trim();
+                const text = originalText.toLowerCase()
+                    .replace(/[^\w\s]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/^-+|-+$/g, '') // Remove leading/trailing dashes
+                    .substring(0, 50); // Limit length for clean URLs
+                
+                // Generate clean ID from actual headline text
+                const finalId = text || `section-${index}`;
+                header.id = finalId;
+                console.log('Set anchor ID:', finalId, 'for text:', originalText);
+            });
+            
+            // List all generated IDs for debugging
+            const allIds = Array.from(document.querySelectorAll('#readme-content [id]')).map(el => '#' + el.id);
+            console.log('All generated anchor IDs:', allIds);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadReadmeContent();
+            loadVersionFromManifest(); // Also try to load version from manifest
+        });
+        
+        // Interactive Canvas Background - Vinyl Records Animation
+        const vinylCanvas = document.getElementById('vinyl-canvas');
+        const vinylCtx = vinylCanvas.getContext('2d');
+        
+        let mouse = { x: 0, y: 0 };
+        let records = [];
+        let animationId;
+
+        // Set canvas size
+        function resizeCanvas() {
+            vinylCanvas.width = window.innerWidth;
+            vinylCanvas.height = window.innerHeight;
+            initRecords();
+        }
+
+        // Initialize vinyl records
+        function initRecords() {
+            records = [];
+            const recordCount = Math.floor(vinylCanvas.width / 80) + 3; // Even fewer records for more space
+            const spacing = vinylCanvas.width / (recordCount + 1);
+            
+            for (let i = 0; i < recordCount; i++) {
+                records.push({
+                    x: (i + 1) * spacing,
+                    baseY: vinylCanvas.height * 0.5,
+                    currentY: vinylCanvas.height * 0.5,
+                    targetY: vinylCanvas.height * 0.5,
+                    rotation: 0,
+                    targetRotation: 0,
+                    height: vinylCanvas.height - 160, // 80px padding top and bottom
+                    width: 20, // Much thicker lines
+                    influence: 0,
+                    targetInfluence: 0,
+                    isLeaning: false
+                });
+            }
+        }
+
+        // Update mouse position
+        function updateMouse(e) {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        }
+
+        // Calculate influence on records
+        function updateRecords() {
+            records.forEach((record, index) => {
+                const distance = Math.abs(mouse.x - record.x);
+                const maxDistance = 100;
+                
+                if (distance < maxDistance) {
+                    const influence = 1 - (distance / maxDistance);
+                    record.targetInfluence = influence;
+                    
+                    // Only the closest record leans diagonally
+                    let closestDistance = Infinity;
+                    let closestIndex = -1;
+                    
+                    records.forEach((r, i) => {
+                        const d = Math.abs(mouse.x - r.x);
+                        if (d < closestDistance) {
+                            closestDistance = d;
+                            closestIndex = i;
+                        }
+                    });
+                    
+                    if (index === closestIndex && distance < 80) {
+                        record.isLeaning = true;
+                        record.targetRotation = 0.4; // Fixed diagonal angle
+                    } else {
+                        record.isLeaning = false;
+                        record.targetRotation = 0;
+                    }
+                    
+                    // Lift effect - records lift up when cursor is near
+                    const liftAmount = influence * 60;
+                    record.targetY = record.baseY - liftAmount;
+                } else {
+                    record.targetInfluence = 0;
+                    record.targetRotation = 0;
+                    record.targetY = record.baseY;
+                    record.isLeaning = false;
+                }
+                
+                // Smooth transitions
+                record.influence += (record.targetInfluence - record.influence) * 0.08;
+                record.rotation += (record.targetRotation - record.rotation) * 0.08;
+                record.currentY += (record.targetY - record.currentY) * 0.08;
+            });
+        }
+
+        // Draw records
+        function drawRecords() {
+            vinylCtx.clearRect(0, 0, vinylCanvas.width, vinylCanvas.height);
+            
+            records.forEach((record, index) => {
+                vinylCtx.save();
+                
+                // Move to record position
+                vinylCtx.translate(record.x, record.currentY);
+                vinylCtx.rotate(record.rotation);
+                
+                // Calculate opacity based on influence
+                const baseOpacity = 0.2;
+                const maxOpacity = 0.6;
+                const opacity = baseOpacity + (record.influence * (maxOpacity - baseOpacity));
+                
+                // Monochrome - only white/gray colors
+                vinylCtx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+                vinylCtx.lineWidth = record.width;
+                vinylCtx.lineCap = 'round';
+                
+                // Subtle glow effect when influenced (white glow)
+                if (record.influence > 0.1) {
+                    vinylCtx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+                    vinylCtx.shadowBlur = record.influence * 20;
+                }
+                
+                vinylCtx.beginPath();
+                vinylCtx.moveTo(0, -record.height / 2);
+                vinylCtx.lineTo(0, record.height / 2);
+                vinylCtx.stroke();
+                
+                vinylCtx.restore();
+            });
+        }
+
+        // Animation loop
+        function animate() {
+            updateRecords();
+            drawRecords();
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // Event listeners for vinyl animation
+        window.addEventListener('mousemove', updateMouse);
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Handle touch for mobile
+        window.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            updateMouse(touch);
+        });
+
+
+
+        // Initialize vinyl canvas
+        resizeCanvas();
+        animate();
+    </script>
+</body>
+</html> 

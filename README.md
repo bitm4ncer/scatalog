@@ -1,7 +1,8 @@
 # scatalog 
+**Browser Extension**
 ### v.0.1.2
 
-## Explore Label Archives on Spotify — Browser Extension
+## Explore Label Archives on Spotify
 
 
 

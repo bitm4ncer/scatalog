@@ -186,11 +186,17 @@
             position: relative;
         }
 
+        .hero-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
         .hero-icon {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 2rem;
-            animation: float 3s ease-in-out infinite;
+            width: 80px;
+            height: 80px;
         }
 
         .hero-icon img {
@@ -199,16 +205,12 @@
             object-fit: contain;
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-
         .hero-title {
             font-size: 3.5rem;
             font-weight: 700;
-            margin-bottom: 1rem;
+            margin: 0;
             color: white;
+            transform: translateY(-3px);
         }
 
         .hero-subtitle {
@@ -927,10 +929,12 @@
 
     <section class="hero">
         <div class="hero-content">
-            <div class="hero-icon fade-in">
-                <img src="icons/info_icon.svg" alt="scatalog icon" />
+            <div class="hero-title-container fade-in">
+                <div class="hero-icon">
+                    <img src="icons/info_icon.svg" alt="scatalog icon" />
+                </div>
+                <h1 class="hero-title">scatalog</h1>
             </div>
-            <h1 class="hero-title fade-in fade-in-delay-1">scatalog</h1>
             <div class="hero-version fade-in fade-in-delay-2" id="hero-version">Browser Extension v0.1.2</div>
             <p class="hero-subtitle fade-in fade-in-delay-3">Explore Label Archives on Spotify</p>
             <div class="hero-cta fade-in fade-in-delay-3">

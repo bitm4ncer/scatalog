@@ -64,7 +64,7 @@ _________________________________________________
 
 <br>
 
-## Browse label catalogs and discover new artists
+## Browse Label Catalogs and Discover New Artists
 <br>
 
 ![Screenshot of Spotify interface showing a track titled "Who Knows Where The Time Goes" by Participation Trophy, with playback controls and track details visible.](./content/img/demo.gif)

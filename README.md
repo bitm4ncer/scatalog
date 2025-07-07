@@ -1,6 +1,6 @@
 # scatalog 
-**Browser Extension**
-### v.0.1.2
+### **Browser Extension**
+v.0.1.2
 
 ## Explore Label Archives on Spotify
 

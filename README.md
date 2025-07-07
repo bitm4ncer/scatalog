@@ -4,10 +4,7 @@ v.0.1.2
 
 ## Explore Label Archives on Spotify
 
-
-
-
-
+<br>
 
 ###  Features
 
@@ -19,13 +16,15 @@ v.0.1.2
 
 ![Screenshot of the scatalog Interface](./content/img/main-screenshot.png)
 
+<br>
 
 _________________________________________________
 
-
+<br>
 
 ##  Quick Start Guide
 
+<br>
 
 ### 1. Install the Extension
 1. Download and extract this repository zip (Code → Download ZIP)
@@ -34,11 +33,15 @@ _________________________________________________
 4. Enable "Developer mode" (toggle in top)
 5. Click "Load unpacked" and select the extracted folder `scatalog-main`
 
+<br>
+
 ### 2. Get Spotify API Credentials
 1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and Log in
 2. Go to Dashboard via the Profile Button in the top right
 3. Click "Create App" and fill in any app name and description
 4. Copy your **Client ID** and **Client Secret**
+
+<br>
 
 ### 3. Connect to API
 1. Click the scatalog extension icon in the toolbar of your browser
@@ -46,6 +49,7 @@ _________________________________________________
 
 ![Setup Screenshot.](./content/img/setup-screenshot.png)
 
+<br>
 
 ### 4. Start Exploring
 1. Go to [open.spotify.com](https://open.spotify.com)
@@ -55,20 +59,25 @@ _________________________________________________
 
 3. Explore that record label's entire catalog
 
-
-
+<br>
 
 _________________________________________________
 
+<br>
 
 ## Browse complete label catalogs & discover new artists through label connections  
 
+<br>
 
 ![Screenshot of Spotify interface showing a track titled "Who Knows Where The Time Goes" by Participation Trophy, with playback controls and track details visible.](./content/img/demo.gif)
 
 **Related Artists recommendations** prioritize artists by their label involvement and release activity, factoring in both release count and frequency, not play counts.
 
+<br>
+
 _________________________________________________
+
+<br>
 
 ### Requirements
 
@@ -84,9 +93,11 @@ _________________________________________________
 - **Safari** 
 - **Internet Explorer** 
 
+<br>
 
 _________________________________________________
 
+<br>
 
 ### Labels deserve their own Spotify page.
 Music discovery should be about exploration and connection — not strategic platform restrictions.\

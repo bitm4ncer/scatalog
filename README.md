@@ -86,7 +86,8 @@ _________________________________________________
 
 _________________________________________________
 
-### Labels deserver their own spotify page.  
-Music discovery should be about exploration and connection, not strategic restrictions. \
-Who operates outside the mainstream spotlight of curated playlists and algorithmic recommendations, based on rules given by the major labels, deserves to be found. \
-**Independent labels are the driving force** behind genre innovation and musical diversity. \
+
+### Labels deserve their own Spotify page.
+Music discovery should be about exploration and connection — not strategic platform restrictions.\
+The current model of commercially curated playlists and biased algorithms actively prohibits indie labels and niche projects from finding their audience.\
+Independent labels are the driving force behind genre innovation and musical diversity. They deserve to be found. 

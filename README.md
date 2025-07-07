@@ -61,19 +61,19 @@ _________________________________________________
 
 ### active exploration
 
-Music discovery should be about exploration and connection, not strategic limitations. 
+Music discovery should be about exploration and connection, not strategic corporate limitations. 
 
-- Browse complete label catalogs 
-- Discover new artists through label connections  
-- *Explore the rich ecosystem of independent music*
+##Browse complete label catalogs & discover new artists through label connections  
 
 
-**Independent labels are the driving force** behind genre innovation and musical diversity. Who operates outside the mainstream spotlight of curated playlists, algorithmic recommendations and major label contracts deserves to be found. Labels deserver their own spotify page.  
-
+**Related Artists** recommendations prioritizes artists appearing on one or across multiple labels, taking release number and frequency into account.
 
 
 ![Screenshot of Spotify interface showing a track titled "Who Knows Where The Time Goes" by Participation Trophy, with playback controls and track details visible.](./content/img/demo.gif)
 
+
+
+**Independent labels are the driving force** behind genre innovation and musical diversity. Who operates outside the mainstream spotlight of curated playlists, algorithmic recommendations and major label contracts deserves to be found. Labels deserver their own spotify page.  
 
 
 

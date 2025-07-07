@@ -1,7 +1,7 @@
 # scatalog 
 ### v.0.1.2
 
-## Chrome extension for label catalog exploration on Spotify
+## A browser extension to explore record label catalogs on Spotify
 
 
 
@@ -59,12 +59,9 @@ _________________________________________________
 _________________________________________________
 
 
-### active exploration
-
-Music discovery should be about exploration and connection, not strategic corporate limitations. 
-
 ## Browse complete label catalogs & discover new artists through label connections  
 
+Music discovery should be about exploration and connection, not strategic corporate limitations. 
 
 **Related Artists** recommendations prioritizes artists appearing on one or across multiple labels, taking release number and frequency into account.
 
@@ -75,6 +72,20 @@ Music discovery should be about exploration and connection, not strategic corpor
 
 **Independent labels are the driving force** behind genre innovation and musical diversity. Who operates outside the mainstream spotlight of curated playlists, algorithmic recommendations and major label contracts deserves to be found. Labels deserver their own spotify page.  
 
+_________________________________________________
 
+### Requirements
+
+ ✅ Supported Browsers
+ - **Brave Browser** 1.20+ (Recommended)
+- **Chrome** 88+ 
+- **Microsoft Edge** 88+ 
+- **Opera** 74+ 
+- **Vivaldi** 4.0+
+
+❌ Unsupported Browsers
+- **Firefox**
+- **Safari** 
+- **Internet Explorer** 
 
 
